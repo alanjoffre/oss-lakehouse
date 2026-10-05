@@ -1,0 +1,44 @@
+[project]
+name = "oss-lakehouse"
+version = "0.1.0"
+description = "Lakehouse do ecossistema open source: PySpark, Delta Lake, Databricks, Azure e IA aplicada à engenharia de dados"
+readme = "README.md"
+authors = [
+    { name = "alanjoffre", email = "104494637+alanjoffre@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=1.11.0",
+    "azure-storage-blob>=12.31.0",
+    "delta-spark==4.4.0",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pyspark==4.2.0",
+    "requests>=2.34.2",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.21,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "chispa>=0.12.0",
+    "ipykernel>=7.4.0",
+    "jupyter>=1.1.1",
+    "jupytext>=1.19.6",
+    "nbconvert>=7.17.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
