@@ -986,12 +986,17 @@ def slug_py(s):
     return s.lower().replace("[bot]", "") if s else None
 
 
-slug = F.udf(slug_py, StringType())
+# `useArrow=False` fixa o caminho CLÁSSICO (pickle, linha a linha). Sem isso o resultado depende do
+# ambiente: no Spark 4.2 a conf `spark.sql.execution.pythonUDF.arrow.enabled` vem ligada, e com
+# `pyarrow` instalado o mesmo `F.udf` passa a trafegar em Arrow (ver a nota abaixo da célula).
+slug = F.udf(slug_py, StringType(), useArrow=False)
+print("spark.sql.execution.pythonUDF.arrow.enabled =",
+      spark.conf.get("spark.sql.execution.pythonUDF.arrow.enabled"))
 src_udf = lambda: ev().select("actor_login")  # noqa: E731  (2 milhões de linhas)
 t_native = time_it(lambda: src_udf().select(F.max(F.regexp_replace(F.lower("actor_login"), r"\[bot\]", "")))
                    .collect(), repeat=3, warmup=1, label="função nativa")
 t_py = time_it(lambda: src_udf().select(F.max(slug("actor_login"))).collect(), repeat=3, warmup=1,
-               label="UDF Python (linha a linha)")
+               label="UDF Python clássica (pickle, linha a linha)")
 udf_timings = [t_native, t_py]
 try:
     import pandas as pd  # noqa: F401
@@ -1002,19 +1007,31 @@ try:
         return s.str.lower().str.replace("[bot]", "", regex=False)
 
     udf_timings.append(time_it(lambda: src_udf().select(F.max(slug_pd("actor_login"))).collect(), repeat=3,
-                               warmup=1, label="pandas UDF (Arrow)"))
+                               warmup=1, label="pandas UDF (Arrow, vetorizada)"))
 except ImportError as exc:
     print(f"⚠️ pandas UDF não medida: {exc.name} não está instalado neste ambiente "
           "(pandas UDF e toPandas() exigem `pandas` e `pyarrow`).")
 print(compare(udf_timings))
-print("\nplano da UDF Python:", grep_plan(src_udf().select(slug("actor_login")), "BatchEvalPython", "ArrowEvalPython"))
+print("\nplano da UDF clássica:", grep_plan(src_udf().select(slug("actor_login")), "BatchEvalPython", "ArrowEvalPython"))
+if len(udf_timings) == 3:
+    print("plano da pandas UDF  :", grep_plan(src_udf().select(slug_pd("actor_login")), "BatchEvalPython",
+                                              "ArrowEvalPython"))
 
 # %% [markdown]
-# A UDF Python sai mais lenta que a nativa (a diferença cresce com a complexidade e o volume);
-# o plano mostra o operador `BatchEvalPython` — a fronteira JVM ↔ Python. Com `pandas` e
-# `pyarrow` instalados, a célula também mede a pandas UDF (`ArrowEvalPython`). **Neste ambiente
-# eles não estão instalados, então a pandas UDF não foi medida** — a expectativa (não provada
-# aqui) é ficar entre a nativa e a UDF linha a linha, por trocar pickle por lotes Arrow.
+# A tabela acima é a medição; a prova estrutural é o plano: a UDF clássica aparece como
+# `BatchEvalPython` e a pandas UDF como `ArrowEvalPython` — as duas são a fronteira JVM ↔ Python,
+# que a função nativa não tem. A diferença para a nativa cresce com a complexidade e o volume.
+#
+# **Achado deste ambiente (vale ouro em entrevista).** Em Spark 4.2 a conf
+# `spark.sql.execution.pythonUDF.arrow.enabled` vem `true` (a célula imprime). Logo, o MESMO
+# `F.udf(...)` muda de caminho conforme o `pyarrow` esteja ou não instalado: sem ele, pickle; com
+# ele, Arrow. Ao instalar `pandas`/`pyarrow` para medir a pandas UDF, esta célula — que antes
+# rodava — **passou a travar**: a UDF com Arrow não terminava sobre a leitura direta da tabela
+# completa (reproduzido isoladamente; em amostras e com um filtro no plano ela termina). Não
+# investiguei a causa raiz. A correção aqui foi declarar a intenção: `useArrow=False` para medir o
+# caminho clássico. Lições: (1) fixe as versões e as confs de que o resultado depende; (2) um
+# upgrade de dependência muda o plano físico sem mudar uma linha do seu código; (3) job que
+# "ficou lento/travou depois do upgrade" se investiga comparando o plano e as confs efetivas.
 #
 # > 🎤 **Resposta de 30 s:** "Ordem de preferência: função nativa do Spark, depois pandas UDF
 # > (Arrow, vetorizada), por último UDF Python linha a linha. A UDF Python serializa cada linha
@@ -1023,7 +1040,8 @@ print("\nplano da UDF Python:", grep_plan(src_udf().select(slug("actor_login")),
 # <details><summary>🔎 Se o entrevistador cavar mais</summary>
 #
 # - Spark 3.5+ tem **UDF Python otimizada com Arrow** (`@udf(useArrow=True)` ou
-#   `spark.sql.execution.pythonUDF.arrow.enabled`) — mesma API, transporte em Arrow.
+#   `spark.sql.execution.pythonUDF.arrow.enabled`) — mesma API, transporte em Arrow. Na sessão
+#   deste notebook (Spark 4.2) a conf já vem ligada — ver o achado acima.
 # - `mapInPandas` / `applyInPandas`: lógica arbitrária por lote ou por grupo (ex.: modelo por
 #   cliente). `applyInPandas` carrega o grupo inteiro na memória do worker Python — skew aqui é OOM.
 # - UDF em Scala/Java (JVM) evita a serialização, mas também é caixa-preta para o otimizador.
