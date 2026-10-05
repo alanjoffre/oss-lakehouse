@@ -1,0 +1,22 @@
+# Azurite: emulador oficial do Azure Storage (Blob, Queue, Table) — custo zero, roda offline.
+# Não emula o endpoint DFS/HNS do ADLS Gen2 (o que o driver abfss:// usa): ver notebook 14.
+#   make azurite-up   |   make azurite-down
+# Conta e chave são as de DESENVOLVIMENTO, públicas e documentadas pela Microsoft (devstoreaccount1).
+services:
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.37.0
+    container_name: osslh-azurite
+    # --skipApiVersionCheck: clientes antigos (o driver WASB do Hadoop usa SDK legado) mandam
+    #   x-ms-version antigo/novo que o Azurite recusaria;
+    # --loose: ignora headers não suportados em vez de falhar;
+    # --inMemoryPersistence: nada em disco — o emulador é descartável (dados de teste).
+    command: >
+      azurite-blob --blobHost 0.0.0.0 --blobPort 10000
+      --skipApiVersionCheck --loose --inMemoryPersistence
+    ports:
+      - "127.0.0.1:10000:10000"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "10000"]
+      interval: 2s
+      timeout: 2s
+      retries: 15

@@ -1,0 +1,155 @@
+# CI/CD do oss-lakehouse.
+#   PR / push    → lint, testes (Spark local com Java 17), Terraform e validação do bundle
+#   push na main → + deploy no alvo dev do bundle
+#   tag v*       → + deploy no alvo prod, com aprovação manual no ambiente "prod" do GitHub
+#
+# Autenticação no Databricks por OIDC (workload identity federation): o GitHub emite um token de
+# curta duração e o Databricks o troca, via federation policy no service principal. Nenhum segredo
+# de longa duração fica no repositório — só o host e o client id (que não são segredo) em `vars`.
+# Variáveis no nível do REPOSITÓRIO (DATABRICKS_HOST, DATABRICKS_CLIENT_ID, *_PROD): o `if:` de um job
+# é avaliado antes de o job entrar no ambiente, então variável só do ambiente não aparece ali.
+# Explicação completa: notebooks/13_cicd_git_asset_bundles.ipynb
+
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Em PR, o push novo cancela o anterior. Em main/tag, nunca: deploy pela metade é pior.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  UV_FROZEN: "1" # instala exatamente o uv.lock; lock desatualizado quebra em vez de "resolver sozinho"
+  SPARK_LOCAL_IP: 127.0.0.1
+  DATABRICKS_CLI_VERSION: 1.19.0
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run ruff check src tests scripts
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      # O JAR do Delta é baixado pelo Ivy na 1ª sessão Spark; com cache, o teste não depende do Maven Central.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.ivy2.5.2
+          key: ivy-${{ hashFiles('uv.lock') }}
+      - run: uv sync
+      - run: uv run pytest -q
+      - name: Build do wheel (o mesmo artefato que o bundle publica)
+        run: uv build --wheel
+
+  terraform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra/terraform/azure
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.5
+      # Sem credencial da Azure: -backend=false não toca no state remoto; validate só confere a sintaxe e os tipos.
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
+  bundle-validate:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # para pedir o token OIDC
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Sem workspace configurado, pula (fork, clone novo)
+        if: env.DATABRICKS_HOST == ''
+        run: echo "::notice::DATABRICKS_HOST não definido; validação do bundle pulada."
+      - uses: databricks/setup-cli@v1.19.0
+        if: env.DATABRICKS_HOST != ''
+        with:
+          version: ${{ env.DATABRICKS_CLI_VERSION }}
+      - uses: astral-sh/setup-uv@v10
+        if: env.DATABRICKS_HOST != ''
+      - if: env.DATABRICKS_HOST != ''
+        run: databricks bundle validate -t dev
+
+  deploy-dev:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DATABRICKS_HOST != ''
+    needs: [lint, test, terraform, bundle-validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: dev
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - uses: databricks/setup-cli@v1.19.0
+        with:
+          version: ${{ env.DATABRICKS_CLI_VERSION }}
+      - run: databricks bundle deploy -t dev
+
+  deploy-prod:
+    if: startsWith(github.ref, 'refs/tags/v') && vars.DATABRICKS_HOST_PROD != ''
+    needs: [lint, test, terraform, bundle-validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # O ambiente "prod" tem revisores obrigatórios (Settings → Environments): o job espera aprovação.
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST_PROD }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID_PROD }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: A tag tem de bater com a versão do pacote
+        run: |
+          versao=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
+          test "v${versao}" = "${GITHUB_REF_NAME}" || { echo "::error::tag ${GITHUB_REF_NAME} ≠ pyproject v${versao}"; exit 1; }
+      - uses: astral-sh/setup-uv@v10
+      - uses: databricks/setup-cli@v1.19.0
+        with:
+          version: ${{ env.DATABRICKS_CLI_VERSION }}
+      - run: databricks bundle deploy -t prod --var="service_principal_id=${DATABRICKS_CLIENT_ID}"

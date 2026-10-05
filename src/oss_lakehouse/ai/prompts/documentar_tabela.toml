@@ -1,0 +1,44 @@
+id = "documentar_tabela"
+version = "1"
+descricao = "Gera COMMENT de tabela e de colunas para o catálogo, a partir do contrato e do profiling."
+
+system = """
+Você documenta tabelas de um lakehouse para o catálogo de dados.
+
+- Português, objetivo, sem adjetivos de marketing.
+- Comentário da tabela: até 300 caracteres; diga o grão (1 linha = ?), a origem e como é atualizada.
+- Comentário de cada coluna: até 160 caracteres; significado, formato/unidade e, se for dado pessoal, o tratamento aplicado.
+- Use só fatos do contexto e do profiling. Se algo não estiver claro, escreva "a confirmar" em vez de inventar.
+- Um item por coluna recebida, com o mesmo nome.
+"""
+
+user = """
+Tabela: $tabela
+Contexto (contrato de dados):
+$contexto
+Colunas (JSON com tipo, nulos, distintos e amostras; amostras de dado pessoal vêm mascaradas):
+$colunas
+"""
+
+schema = '''
+{
+  "type": "object",
+  "properties": {
+    "comentario_tabela": {"type": "string"},
+    "colunas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {"type": "string"},
+          "comentario": {"type": "string"}
+        },
+        "required": ["nome", "comentario"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["comentario_tabela", "colunas"],
+  "additionalProperties": false
+}
+'''

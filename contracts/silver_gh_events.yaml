@@ -1,0 +1,53 @@
+# Contrato de dados da silver/gh_events.
+# Quem produz (dono) e quem consome combinam ESTE arquivo; mudança aqui passa por PR e por versão.
+# Regra de versão (semver): coluna nova opcional = minor; remover/renomear/mudar tipo = MAJOR
+# (quebra consumidor — exige aviso e período de convivência).
+name: silver.gh_events
+version: 1.0.0
+owner: time-dados-plataforma (oss_lakehouse.silver)
+description: Eventos públicos do GitHub (GH Archive) tipados, achatados e deduplicados.
+grain: 1 linha por evento do GitHub (event_id)
+primary_key: [event_id]
+allow_extra_columns: false
+freshness:
+  column: created_at
+  max_delay_hours: 3        # o GH Archive publica a hora H por volta de H+1; 3 h dá folga
+expectations:
+  - {name: event_id_not_null, condition: "event_id IS NOT NULL", action: fail}
+  - {name: created_at_not_null, condition: "created_at IS NOT NULL", action: drop}
+  - {name: repo_id_not_null, condition: "repo_id IS NOT NULL", action: drop}
+  - {name: event_type_known, condition: "event_type IN ('PushEvent','CreateEvent','DeleteEvent','PullRequestEvent','IssueCommentEvent','IssuesEvent','PullRequestReviewEvent','PullRequestReviewCommentEvent','WatchEvent','ReleaseEvent','ForkEvent','MemberEvent','CommitCommentEvent','GollumEvent','PublicEvent','DiscussionEvent')", action: warn}
+  - {name: pr_number_when_pr, condition: "event_type <> 'PullRequestEvent' OR pr_number IS NOT NULL", action: warn}
+columns:
+  - {name: event_id, type: bigint, nullable: false, description: id do evento no GitHub}
+  - {name: event_type, type: string, nullable: false, description: PushEvent, PullRequestEvent…}
+  - {name: created_at, type: timestamp, nullable: false, description: instante do evento (UTC)}
+  - {name: event_date, type: date, nullable: false, description: partição (data UTC de created_at)}
+  - {name: event_hour, type: int, nullable: false, description: hora UTC 0–23}
+  - {name: actor_id, type: bigint, nullable: false}
+  - {name: actor_login, type: string, nullable: false}
+  - {name: is_bot, type: boolean, nullable: false, description: "login termina em [bot]"}
+  - {name: repo_id, type: bigint, nullable: false, description: chave estável do repositório}
+  - {name: repo_name, type: string, nullable: false, description: owner/nome — muda em renomeação}
+  - {name: repo_owner, type: string, nullable: false}
+  - {name: org_id, type: bigint, description: nulo em repositório pessoal}
+  - {name: org_login, type: string}
+  - {name: action, type: string, description: "payload.action (opened, closed, merged, started…)"}
+  - {name: ref, type: string}
+  - {name: ref_type, type: string}
+  - {name: push_id, type: bigint}
+  - {name: head_sha, type: string}
+  - {name: pr_number, type: int}
+  - {name: pr_id, type: bigint}
+  - {name: pr_base_ref, type: string}
+  - {name: pr_head_ref, type: string}
+  - {name: issue_number, type: int}
+  - {name: issue_title, type: string, description: texto livre — pode conter dado pessoal}
+  - {name: issue_state, type: string}
+  - {name: review_state, type: string}
+  - {name: release_tag, type: string}
+  - {name: is_public, type: boolean}
+  - {name: _source_file, type: string, nullable: false, description: linhagem — arquivo de origem}
+  - {name: _ingested_at, type: timestamp, nullable: false}
+  - {name: _content_hash, type: string, nullable: false}
+  - {name: _processed_at, type: timestamp, nullable: false}

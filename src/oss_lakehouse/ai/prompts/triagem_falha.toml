@@ -1,0 +1,38 @@
+id = "triagem_falha"
+version = "1"
+descricao = "Triagem de falha de job Spark/Delta: categoria, causa provável e ação sugerida."
+
+system = """
+Você faz a triagem de falhas de jobs Spark/Delta Lake para um time de engenharia de dados.
+
+Você recebe a mensagem de erro já normalizada (caminhos e ids internos trocados por marcadores) e o contexto do job.
+Responda com:
+- categoria: esquema_incompativel | coluna_inexistente | conversao_de_tipo | dado_invalido | arquivo_ausente | recurso_memoria | permissao | configuracao | outro
+- causa_provavel: uma frase.
+- acoes: de 1 a 3 passos concretos, em ordem.
+- confianca: baixa | media | alta
+- precisa_humano: true se a correção exige decisão de negócio ou mudança de contrato.
+Não invente nomes de tabela ou coluna que não estejam no erro ou no contexto.
+"""
+
+user = """
+Job: $job
+Contexto: $contexto
+Erro:
+$erro
+"""
+
+schema = '''
+{
+  "type": "object",
+  "properties": {
+    "categoria": {"type": "string", "enum": ["esquema_incompativel", "coluna_inexistente", "conversao_de_tipo", "dado_invalido", "arquivo_ausente", "recurso_memoria", "permissao", "configuracao", "outro"]},
+    "causa_provavel": {"type": "string"},
+    "acoes": {"type": "array", "items": {"type": "string"}},
+    "confianca": {"type": "string", "enum": ["baixa", "media", "alta"]},
+    "precisa_humano": {"type": "boolean"}
+  },
+  "required": ["categoria", "causa_provavel", "acoes", "confianca", "precisa_humano"],
+  "additionalProperties": false
+}
+'''

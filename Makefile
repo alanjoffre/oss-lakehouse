@@ -2,7 +2,7 @@ SHELL := /bin/bash
 SPARK := scripts/spark_slot.sh
 export SPARK_LOCAL_IP ?= 127.0.0.1
 
-.PHONY: help setup data bronze test lint notebooks nb demo tf-validate azurite-up azurite-down clean-lake
+.PHONY: help setup data bronze test lint notebooks nb guia demo build bundle-validate precommit tf-validate azurite-up azurite-down clean-lake
 
 help: ## Lista os comandos
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -28,7 +28,19 @@ notebooks: ## Gera e executa todos os notebooks
 nb: ## Gera e executa um notebook: make nb N=05
 	$(SPARK) uv run python scripts/build_notebooks.py $(N)
 
-demo: data bronze ## Demo de ponta a ponta para entrevista (offline depois do make data)
+guia: ## Regenera o GUIA_ENTREVISTA.md a partir dos notebooks
+	uv run python scripts/build_guia.py
+
+build: ## Gera o wheel do pacote (o artefato que o job do Databricks instala)
+	uv build --wheel
+
+bundle-validate: ## Valida o bundle do Databricks (precisa de workspace configurado)
+	databricks bundle validate -t dev
+
+precommit: ## Roda os hooks de pre-commit em todos os arquivos
+	uvx pre-commit run --all-files
+
+demo: data ## Demo de ponta a ponta para entrevista (offline depois do make data)
 	$(SPARK) uv run python -m oss_lakehouse.cli demo
 
 tf-validate: ## Valida o Terraform da Azure sem credenciais

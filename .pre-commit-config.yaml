@@ -1,0 +1,46 @@
+# Ganchos de pre-commit: barram o erro barato ANTES do commit (segundos), em vez de no CI (minutos).
+#   uvx pre-commit install          # instala o gancho no .git/hooks deste clone
+#   uvx pre-commit run --all-files  # roda tudo sob demanda
+#
+# Por que NÃO há nbstripout aqui: neste repositório as saídas dos notebooks são o produto.
+# O .ipynb é gerado e executado por scripts/build_notebooks.py e versionado de propósito, para
+# quem abre no GitHub ver o resultado sem rodar nada. A fonte revisável é notebooks/_src/*.py
+# (jupytext), então o diff de código continua legível. Num repo de produção, o normal é o oposto:
+# nbstripout ligado, porque saída de notebook vaza dado e polui o diff.
+default_install_hook_types: [pre-commit]
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^notebooks/.*\.ipynb$ # gerado: o build é a fonte da verdade
+      - id: end-of-file-fixer
+        exclude: ^notebooks/.*\.ipynb$
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=2048] # notebook com saída cabe; parquet/zip/dado não
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.10 # mesma versão do uv.lock: lint local e CI concordam
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^(src|tests|scripts)/
+
+  - repo: local
+    hooks:
+      - id: terraform-fmt
+        name: terraform fmt
+        entry: terraform fmt -check -recursive infra/terraform
+        language: system
+        pass_filenames: false
+        files: \.tf$

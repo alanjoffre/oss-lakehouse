@@ -16,3 +16,6 @@ infra/**/*.tfstate*
 infra/**/*.tfvars
 !infra/**/*.tfvars.example
 infra/**/.terraform.lock.hcl
+# Bundles do Databricks e build do pacote
+.databricks/
+dist/

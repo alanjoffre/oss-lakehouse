@@ -1,0 +1,108 @@
+# Job multi-tarefa do lakehouse (Lakeflow Jobs): bronze → silver → gold → quality.
+#
+# Cada tarefa roda o MESMO wheel (oss_lakehouse) com um subcomando diferente do CLI —
+# a lógica vive no pacote testado, o job só orquestra. Subcomandos esperados em oss_lakehouse.cli:
+#   bronze  — ingestão incremental da landing (existe hoje)
+#   silver  — limpeza, deduplicação e MERGE/SCD2 (oss_lakehouse.silver / .scd2, notebook 05)
+#   gold    — modelo dimensional e agregados (oss_lakehouse.gold, notebook 07)
+#   quality — expectations/contratos sobre silver e gold (notebook 08)
+# O entry point `oss-lakehouse` precisa estar em [project.scripts] do pyproject.toml.
+
+resources:
+  jobs:
+    medallion:
+      name: oss_lakehouse_medallion
+      description: Ingestão do GH Archive e construção das camadas bronze, silver e gold, com checagem de qualidade.
+
+      # Um job cluster (criado para a execução e destruído no fim) compartilhado pelas 4 tarefas:
+      # paga-se o tempo de subir a VM uma vez só. Especificação em var.cluster (prod é maior).
+      job_clusters:
+        - job_cluster_key: medallion_cluster
+          new_cluster: ${var.cluster}
+
+      # Execução sobreposta é a receita clássica de MERGE concorrente e duplicata: uma de cada vez.
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+      timeout_seconds: 7200
+
+      # De hora em hora, 15 min depois da virada (o GH Archive publica a hora anterior com atraso).
+      schedule:
+        quartz_cron_expression: "0 15 * * * ?"
+        timezone_id: UTC
+        pause_status: ${var.schedule_pause}
+
+      email_notifications:
+        on_failure:
+          - ${var.alert_email}
+        on_duration_warning_threshold_exceeded:
+          - ${var.alert_email}
+      # Alerta de atraso: se passar de 40 min, avisa antes do timeout matar a execução.
+      health:
+        rules:
+          - metric: RUN_DURATION_SECONDS
+            op: GREATER_THAN
+            value: 2400
+
+      tags:
+        projeto: oss-lakehouse
+        camada: medallion
+
+      tasks:
+        - task_key: bronze
+          job_cluster_key: medallion_cluster
+          python_wheel_task:
+            package_name: oss_lakehouse
+            entry_point: oss-lakehouse
+            parameters: ["bronze"]
+          libraries:
+            - whl: ../dist/*.whl
+          # Falha transitória (rede, storage) se resolve sozinha; erro de lógica não — daí só 2.
+          max_retries: 2
+          min_retry_interval_millis: 60000
+          retry_on_timeout: false
+          timeout_seconds: 1800
+
+        - task_key: silver
+          depends_on:
+            - task_key: bronze
+          job_cluster_key: medallion_cluster
+          python_wheel_task:
+            package_name: oss_lakehouse
+            entry_point: oss-lakehouse
+            parameters: ["silver"]
+          libraries:
+            - whl: ../dist/*.whl
+          # Só é seguro repetir porque o MERGE da silver é idempotente.
+          max_retries: 2
+          min_retry_interval_millis: 60000
+          retry_on_timeout: false
+          timeout_seconds: 1800
+
+        - task_key: gold
+          depends_on:
+            - task_key: silver
+          job_cluster_key: medallion_cluster
+          python_wheel_task:
+            package_name: oss_lakehouse
+            entry_point: oss-lakehouse
+            parameters: ["gold"]
+          libraries:
+            - whl: ../dist/*.whl
+          max_retries: 1
+          min_retry_interval_millis: 60000
+          timeout_seconds: 1800
+
+        - task_key: quality
+          depends_on:
+            - task_key: gold
+          job_cluster_key: medallion_cluster
+          python_wheel_task:
+            package_name: oss_lakehouse
+            entry_point: oss-lakehouse
+            parameters: ["quality"]
+          libraries:
+            - whl: ../dist/*.whl
+          # Qualidade reprovada é sinal, não falha transitória: não tentar de novo.
+          max_retries: 0
+          timeout_seconds: 900

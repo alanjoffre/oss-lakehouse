@@ -1,0 +1,14 @@
+# Copie para dev.tfvars (ignorado pelo Git) e preencha.
+# terraform plan -var-file=envs/dev.tfvars
+subscription_id       = "00000000-0000-0000-0000-000000000000"
+env                   = "dev"
+location              = "brazilsouth"
+storage_replication   = "LRS"
+public_network_access = "Enabled"
+allowed_ip_ranges     = ["203.0.113.10"] # IP do escritório/VPN (exemplo de documentação)
+cluster_max_workers   = 2
+
+groups = {
+  engineers = "data-engineers"
+  analysts  = "data-analysts"
+}

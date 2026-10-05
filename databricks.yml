@@ -1,0 +1,103 @@
+# Declarative Automation Bundle (ex-"Databricks Asset Bundles", renomeado em mar/2026; CLI e arquivos iguais).
+# Um bundle = código + definição dos recursos (jobs, pipelines…) + alvos (dev/prod), versionados juntos no Git.
+#
+#   databricks bundle validate -t dev      # resolve variáveis e confere o esquema (precisa de workspace)
+#   databricks bundle deploy   -t dev      # builda o wheel, sobe e cria/atualiza o job com prefixo [dev <você>]
+#   databricks bundle run      -t dev medallion
+#
+# Explicação linha a linha: notebooks/13_cicd_git_asset_bundles.ipynb
+
+bundle:
+  name: oss_lakehouse
+  # Trava a versão mínima do CLI: bundle é infraestrutura; CLI velho interpreta o YAML diferente.
+  databricks_cli_version: ">= 1.3.0"
+
+include:
+  - resources/*.yml
+
+# O wheel é construído pelo próprio deploy (mesmo comando do CI e do laptop) e enviado ao workspace.
+artifacts:
+  oss_lakehouse:
+    type: whl
+    build: uv build --wheel
+    path: .
+
+variables:
+  catalog:
+    description: Catálogo do Unity Catalog onde ficam bronze/silver/gold.
+    default: oss_dev
+  data_root:
+    description: Raiz do lakehouse (ADLS Gen2 via abfss://). Vira OSSLH_DATA_ROOT no job.
+    default: abfss://lake@stosslakehousedev.dfs.core.windows.net
+  alert_email:
+    description: Quem recebe falha e atraso do job.
+    default: data-alerts@example.com
+  schedule_pause:
+    description: PAUSED ou UNPAUSED. Em mode development o schedule é pausado de qualquer jeito.
+    default: PAUSED
+  service_principal_id:
+    description: Application ID (UUID) do service principal que roda o job em produção.
+    default: 00000000-0000-0000-0000-000000000000
+  cluster:
+    description: Especificação do job cluster (variável complexa — prod sobrescreve o tamanho).
+    type: complex
+    default:
+      # 17.3 LTS = Spark 4.0. Confirme as chaves disponíveis com `databricks clusters spark-versions`.
+      spark_version: 17.3.x-scala2.13
+      node_type_id: Standard_D4ds_v5
+      data_security_mode: SINGLE_USER
+      runtime_engine: STANDARD
+      autoscale:
+        min_workers: 1
+        max_workers: 2
+      spark_env_vars:
+        OSSLH_ENV: databricks
+        OSSLH_DATA_ROOT: ${var.data_root}
+        OSSLH_CATALOG: ${var.catalog}
+      custom_tags:
+        projeto: oss-lakehouse
+        centro_de_custo: dados
+
+targets:
+  # Desenvolvimento: cada pessoa tem sua cópia isolada, com prefixo "[dev <usuário>]",
+  # schedules pausados e sem lock de deploy. O host vem de DATABRICKS_HOST ou do ~/.databrickscfg.
+  dev:
+    mode: development
+    default: true
+    variables:
+      catalog: oss_dev
+
+  # Produção: roda como service principal (não como a pessoa que fez o deploy), caminho
+  # compartilhado e permissões explícitas. Deploy só pelo CI, a partir de tag v* com aprovação.
+  # Sem `git.branch: main` de propósito: o deploy de prod parte de uma tag (HEAD destacado),
+  # e a validação de branch do modo production falharia. A proteção está no ambiente do GitHub.
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+    run_as:
+      service_principal_name: ${var.service_principal_id}
+    permissions:
+      - group_name: data-engineers
+        level: CAN_VIEW
+      - service_principal_name: ${var.service_principal_id}
+        level: CAN_MANAGE
+    variables:
+      catalog: oss_prod
+      data_root: abfss://lake@stosslakehouseprd.dfs.core.windows.net
+      schedule_pause: UNPAUSED
+      cluster:
+        spark_version: 17.3.x-scala2.13
+        node_type_id: Standard_D8ds_v5
+        data_security_mode: SINGLE_USER
+        runtime_engine: PHOTON
+        autoscale:
+          min_workers: 2
+          max_workers: 6
+        spark_env_vars:
+          OSSLH_ENV: databricks
+          OSSLH_DATA_ROOT: ${var.data_root}
+          OSSLH_CATALOG: ${var.catalog}
+        custom_tags:
+          projeto: oss-lakehouse
+          centro_de_custo: dados

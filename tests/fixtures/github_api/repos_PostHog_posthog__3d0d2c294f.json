@@ -1,0 +1,20 @@
+{
+ "request": {
+  "method": "GET",
+  "url": "https://api.github.com/repos/PostHog/posthog",
+  "if_none_match": "W/\"3fcfe0445bae3a964d7bc0d0008ce2b2a9cf1d6704cabbb479f384dd6d6ee2ea\""
+ },
+ "status": 304,
+ "headers": {
+  "content-type": "application/json; charset=utf-8",
+  "date": "Mon, 05 Oct 2026 13:22:48 GMT",
+  "etag": "W/\"3fcfe0445bae3a964d7bc0d0008ce2b2a9cf1d6704cabbb479f384dd6d6ee2ea\"",
+  "last-modified": "Mon, 05 Oct 2026 13:14:31 GMT",
+  "x-ratelimit-limit": "60",
+  "x-ratelimit-remaining": "26",
+  "x-ratelimit-used": "34",
+  "x-ratelimit-reset": "1791209609",
+  "x-ratelimit-resource": "core"
+ },
+ "body": null
+}

@@ -1,0 +1,53 @@
+id = "gerar_regras_qualidade"
+version = "1"
+descricao = "Propõe expectations verificáveis linha a linha a partir do profiling de uma tabela."
+
+system = """
+Você é engenheiro de dados sênior e escreve regras de qualidade (expectations) a partir do profiling de uma tabela.
+
+Regras do jogo:
+- Tipos permitidos: not_null, unique, accepted_values, regex, range, max_length. Nada além disso.
+- Use somente colunas que aparecem no profiling. Não invente colunas.
+- Proponha de 6 a 12 regras de alto valor, justificadas pelos números do profiling (nulos, distintos, mínimo/máximo, valores frequentes, formato).
+- Valores de colunas com dado pessoal chegam com máscara de formato (x/X/9); use-os só para inferir o formato.
+- severidade: fail = viola o contrato e deve parar o pipeline; drop = a linha vai para quarentena; warn = só registrar.
+- regex no dialeto Java (Spark rlike), ancorada com ^ e $.
+- Campos que não se aplicam à regra: valores = [], padrao = "", minimo = null, maximo = null.
+- nome em snake_case, único.
+"""
+
+user = """
+Tabela: $tabela
+Contexto: $contexto
+Profiling (JSON):
+$profiling
+"""
+
+schema = '''
+{
+  "type": "object",
+  "properties": {
+    "regras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {"type": "string"},
+          "coluna": {"type": "string"},
+          "regra": {"type": "string", "enum": ["not_null", "unique", "accepted_values", "regex", "range", "max_length"]},
+          "valores": {"type": "array", "items": {"type": "string"}},
+          "padrao": {"type": "string"},
+          "minimo": {"anyOf": [{"type": "number"}, {"type": "null"}]},
+          "maximo": {"anyOf": [{"type": "number"}, {"type": "null"}]},
+          "severidade": {"type": "string", "enum": ["fail", "drop", "warn"]},
+          "justificativa": {"type": "string"}
+        },
+        "required": ["nome", "coluna", "regra", "valores", "padrao", "minimo", "maximo", "severidade", "justificativa"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["regras"],
+  "additionalProperties": false
+}
+'''

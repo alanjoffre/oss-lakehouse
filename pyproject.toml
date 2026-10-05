@@ -10,18 +10,28 @@ requires-python = ">=3.12"
 dependencies = [
     "anthropic>=1.11.0",
     "azure-storage-blob>=12.31.0",
-    "delta-spark==4.4.0",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
-    "pyspark==4.2.0",
     "requests>=2.34.2",
 ]
+
+[project.scripts]
+oss-lakehouse = "oss_lakehouse.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.12.21,<0.13.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
+# Spark e Delta ficam FORA das dependências do pacote: o cluster do Databricks já traz os dele, e um
+# wheel que declara pyspark faria o pip instalar outro Spark por cima do runtime. Local, vêm deste grupo.
+# O extra `connect` traz pandas/pyarrow (pandas UDF) e gRPC (spark-pipelines, notebook 08).
+spark = [
+    "pyspark[connect]==4.2.0",
+    "delta-spark==4.4.0",
+    # O PySpark 4.2 avisa que ainda não suporta pandas 3 por completo.
+    "pandas>=2.2,<3",
+]
 dev = [
     "chispa>=0.12.0",
     "ipykernel>=7.4.0",
@@ -31,6 +41,9 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.10",
 ]
+
+[tool.uv]
+default-groups = ["dev", "spark"]
 
 [tool.ruff]
 line-length = 110

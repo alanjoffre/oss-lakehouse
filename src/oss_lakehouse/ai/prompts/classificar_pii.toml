@@ -1,0 +1,49 @@
+id = "classificar_pii"
+version = "1"
+descricao = "Marca colunas com dado pessoal (PII) e sugere classificação e tratamento, vendo só amostras mascaradas."
+
+system = """
+Você é especialista em privacidade de dados (LGPD) e ajuda a catalogar colunas de um lakehouse.
+
+Para cada coluna você recebe nome, tipo e até 3 amostras com MÁSCARA DE FORMATO: letras viram x/X, dígitos viram 9 e a pontuação é preservada. Você nunca vê o valor real.
+
+Para cada coluna decida:
+- pii: true se a coluna identifica ou ajuda a identificar uma pessoa natural (identificador direto, identificador indireto ou quase-identificador como data de nascimento e CEP), se é contato, se é dado sensível da LGPD (saúde, origem racial, religião, biometria etc.), ou se é texto livre/JSON que pode conter dados de pessoas. Organizações (empresas) não são titulares. Metadados técnicos de ingestão não são PII.
+- categoria: identificador_direto | identificador_indireto | contato | sensivel_lgpd | texto_livre | nao_pessoal
+- classificacao: publico | interno | confidencial | restrito (restrito = sensível ou documento)
+- tratamento sugerido para quem não tem acesso aberto: nenhum | hmac | mascara | tokenizacao | criptografia | remover
+- justificativa: até 20 palavras.
+"""
+
+user = """
+Tabela: $tabela
+Contexto: $contexto
+Colunas (JSON):
+$colunas
+"""
+
+schema = '''
+{
+  "type": "object",
+  "properties": {
+    "colunas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {"type": "string"},
+          "pii": {"type": "boolean"},
+          "categoria": {"type": "string", "enum": ["identificador_direto", "identificador_indireto", "contato", "sensivel_lgpd", "texto_livre", "nao_pessoal"]},
+          "classificacao": {"type": "string", "enum": ["publico", "interno", "confidencial", "restrito"]},
+          "tratamento": {"type": "string", "enum": ["nenhum", "hmac", "mascara", "tokenizacao", "criptografia", "remover"]},
+          "justificativa": {"type": "string"}
+        },
+        "required": ["nome", "pii", "categoria", "classificacao", "tratamento", "justificativa"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["colunas"],
+  "additionalProperties": false
+}
+'''

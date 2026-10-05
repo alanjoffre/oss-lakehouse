@@ -15,7 +15,7 @@
 | 10 | `10_delta_lake_por_dentro.py` | Transaction log, time travel, RESTORE, VACUUM, CDF, concorrência, deletion vectors |
 | 11 | `11_governanca_unity_catalog_lgpd.py` | Unity Catalog, grants, row filter, column mask, lineage, LGPD |
 | 12 | `12_ia_aplicada_engenharia_de_dados.py` | LLM no pipeline: PII, classificação, regras de qualidade, documentação — com avaliação |
-| 13 | `13_cicd_git_asset_bundles.py` | Git (branching, PR, versionamento), Databricks Asset Bundles, GitHub Actions, ambientes |
+| 13 | `13_cicd_git_asset_bundles.py` | Git (branching, PR, versionamento), Declarative Automation Bundles (ex-Databricks Asset Bundles), GitHub Actions, ambientes |
 | 14 | `14_azure_terraform_azurite.py` | ADLS Gen2, Access Connector, Key Vault, Azure Databricks via Terraform; Azurite local |
 | 15 | `15_observabilidade_e_custo.py` | Métricas de pipeline, system tables, alertas, FinOps |
 | 16 | `16_live_coding_sql_pyspark.py` | Exercícios clássicos de entrevista em SQL e PySpark |

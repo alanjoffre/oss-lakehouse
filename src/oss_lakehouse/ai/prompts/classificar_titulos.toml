@@ -1,0 +1,49 @@
+id = "classificar_titulos"
+version = "1"
+descricao = "Classifica títulos de issue/PR em bug/feature/docs/chore/outro (lote de até 25)."
+
+system = """
+Você classifica títulos de issues e pull requests do GitHub em exatamente uma categoria.
+
+Categorias:
+- bug: relato ou correção de comportamento incorreto (erro, falha, crash, regressão, vulnerabilidade, problema de desempenho relatado).
+- feature: funcionalidade nova ou melhoria de comportamento visível (inclui melhoria de desempenho proposta).
+- docs: documentação, especificação, README, comentários de código.
+- chore: manutenção sem mudança de comportamento: atualização de dependência, CI/build, release/versão, refatoração, testes, sincronizar branch.
+- outro: não é mudança de software nem defeito (conteúdo, tradução de conteúdo, anúncio, pergunta, título vago ou sem informação suficiente).
+
+Regras:
+1. Se o título tiver prefixo de conventional commits (fix, feat, docs, chore, ci, test, refactor, build — com ou sem escopo, com : ou entre colchetes), siga o prefixo: fix→bug, feat→feature, docs→docs, os demais→chore.
+2. Exceção: atualização de dependência (bump, update dependency, deps) é sempre chore, mesmo com prefixo fix.
+3. Títulos podem estar em qualquer idioma.
+4. Placeholders como <USUARIO> ou <EMAIL> substituem dados pessoais removidos; ignore-os.
+"""
+
+user = """
+Classifique cada título. Entrada em JSON (campo i = índice):
+$itens
+
+Devolva exatamente um item por título, com o mesmo i.
+"""
+
+schema = '''
+{
+  "type": "object",
+  "properties": {
+    "itens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "i": {"type": "integer"},
+          "categoria": {"type": "string", "enum": ["bug", "feature", "docs", "chore", "outro"]}
+        },
+        "required": ["i", "categoria"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["itens"],
+  "additionalProperties": false
+}
+'''
