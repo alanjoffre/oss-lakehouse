@@ -13,7 +13,7 @@
 # > descrita em Terraform **validado**, e o caminho do dado até o Blob Storage exercitado de verdade, offline, no
 # > emulador Azurite: SDK, SAS de menor privilégio e Spark gravando **Delta via `abfs://`**.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Microsoft Azure | ADLS Gen2 (HNS), Access Connector + identidade gerenciada, RBAC, Key Vault, rede, custos |
 # | Databricks | workspace premium, Unity Catalog (storage credential, external location, catálogo, grants), cluster policy |

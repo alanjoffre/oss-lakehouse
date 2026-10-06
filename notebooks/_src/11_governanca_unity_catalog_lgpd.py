@@ -14,7 +14,7 @@
 # > de `VACUUM` (e de `REORG ... PURGE`, se houver deletion vectors); (3) o que o Unity Catalog faz por política
 # > declarativa e o que continua sendo trabalho do pipeline.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | §1–§3 (Unity Catalog, managed × external, grants), §8 (row filter, column mask, ABAC), §9 (lineage, auditoria, sharing) |
 # | Microsoft Azure | §2 (Access Connector, storage credential, external location), §5 (Key Vault), §13 (soft delete do ADLS), seção ☁️ |
@@ -1784,7 +1784,7 @@ print(f"chave do titular nos parquet do cofre: {g.contar_no_parquet_bruto(spark,
 #
 # <details><summary>🔎 Se o entrevistador cavar mais</summary>
 #
-# - **Outros papéis na mesa** (o "time multidisciplinar" da vaga): **segurança da informação** (rede,
+# - **Outros papéis na mesa** (o time multidisciplinar): **segurança da informação** (rede,
 #   identidade, cofre, resposta a incidente), **dono do dado** (*data owner* — a área de negócio que responde
 #   pelo conteúdo e aprova acesso), ***data steward*** (cuida de qualidade e metadado no dia a dia), plataforma
 #   (workspaces, UC, Terraform).

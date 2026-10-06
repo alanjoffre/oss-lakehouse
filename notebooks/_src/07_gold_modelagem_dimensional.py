@@ -13,7 +13,7 @@
 # > a versão certa do repositório (join point-in-time), os agregados batem com o detalhe e a organização
 # > física (Liquid Clustering) roda no Delta open source.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Arquitetura e desenvolvimento de pipelines | star schema, grão, surrogate keys, fato × agregado |
 # | Databricks e processamento de dados | Liquid Clustering (`CLUSTER BY`), OPTIMIZE, Databricks SQL ☁️ |

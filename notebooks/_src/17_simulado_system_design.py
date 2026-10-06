@@ -13,7 +13,7 @@
 # > guardanapo, desenho, decisões e trade-offs — e diagnosticar os 10 incidentes clássicos de Spark/Delta com
 # > sintoma, causa e correção, reproduzindo localmente os que cabem em segundos.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Arquitetura e desenvolvimento de pipelines | §1 (framework), §2–§5 (4 casos) |
 # | Microsoft Azure | Event Hubs, ADLS Gen2, ADF, Key Vault, Entra ID, Monitor nos 4 casos |

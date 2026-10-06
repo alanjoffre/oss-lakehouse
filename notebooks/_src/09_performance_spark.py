@@ -13,7 +13,7 @@
 # > de eventos), o que deixa um job Spark lento — shuffle, skew, small files, layout ruim,
 # > UDF, spill — e o que conserta cada caso.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | §1–§13: plano físico, AQE, joins, skew, layout Delta |
 # | Python avançado | §11 (UDF Python × nativa × pandas UDF), `oss_lakehouse.perf` (context managers, dataclasses) |

@@ -13,7 +13,7 @@
 # > com contrato de saída, gabarito, custo medido, cache, guardrails e um humano aprovando o que muda produção —
 # > e mostra, com número, onde uma regra simples resolve melhor que o modelo.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | IA aplicada à engenharia de dados | §3 PII · §4 classificação · §9 regras de qualidade · §10 documentação · §11 triagem de falha |
 # | Arquitetura e desenvolvimento de pipelines | §1 (LLM atrás de interface, cache por hash) · §8 (inferência em lote, rate limit, idempotência) |

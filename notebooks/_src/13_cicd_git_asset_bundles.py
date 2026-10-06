@@ -13,7 +13,7 @@
 # > de pacote e de contrato, lint e testes automáticos, um wheel construído e um job multi-tarefa do Databricks
 # > definido como código e promovido de dev para prod pelo GitHub Actions.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Git e práticas de versionamento | §1 a §4 (trunk-based, Conventional Commits, SemVer, revert × reset, proteção de branch) |
 # | Databricks (projetos com Databricks — diferencial) | §7 e §8 (`databricks.yml`, `resources/jobs.yml`) |

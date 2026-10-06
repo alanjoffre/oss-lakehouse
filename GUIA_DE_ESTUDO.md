@@ -1,4 +1,4 @@
-# Guia de entrevista
+# Guia de estudo
 
 > Gerado por `scripts/build_guia.py` a partir da seção **Perguntas de entrevista** de cada notebook. Não editar à mão: mude a pergunta no notebook e rode `make guia`.
 
@@ -8,7 +8,7 @@
 
 | Notebook | Perguntas |
 |---|---|
-| [00 · Mapa da vaga e arquitetura](#00-mapa-da-vaga-e-arquitetura) | 11 |
+| [00 · Mapa de competências e arquitetura](#00-mapa-de-competencias-e-arquitetura) | 11 |
 | [01 · Ambiente: Spark local, Databricks e Azure](#01-ambiente-local-databricks-azure) | 11 |
 | [02 · Python avançado para engenharia de dados](#02-python-avancado) | 12 |
 | [03 · Ingestão incremental de arquivos: landing → bronze, checkpoint e Auto Loader](#03-ingestao-arquivos-auto-loader) | 9 |
@@ -27,11 +27,11 @@
 | [16 · Live coding: SQL e PySpark](#16-live-coding-sql-pyspark) | 12 |
 | [17 · Simulado de system design e troubleshooting](#17-simulado-system-design) | 12 |
 
-<a id="00-mapa-da-vaga-e-arquitetura"></a>
+<a id="00-mapa-de-competencias-e-arquitetura"></a>
 
-## 00 · Mapa da vaga e arquitetura
+## 00 · Mapa de competências e arquitetura
 
-Notebook: [`00_mapa_da_vaga_e_arquitetura.ipynb`](notebooks/00_mapa_da_vaga_e_arquitetura.ipynb)
+Notebook: [`00_mapa_de_competencias_e_arquitetura.ipynb`](notebooks/00_mapa_de_competencias_e_arquitetura.ipynb)
 
 <details>
 <summary><b>1. O que é um lakehouse e em que difere de um data warehouse?</b></summary>

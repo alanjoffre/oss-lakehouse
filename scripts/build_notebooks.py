@@ -7,6 +7,7 @@ Uso:
     uv run python scripts/build_notebooks.py            # todos
     uv run python scripts/build_notebooks.py 05 09      # só os que começam com 05 e 09
     uv run python scripts/build_notebooks.py --no-exec  # só converte
+    uv run python scripts/build_notebooks.py --text-only 05  # só o texto mudou: mantém as saídas
     uv run python scripts/build_notebooks.py --scrub-only  # só limpa as saídas já geradas
 """
 
@@ -62,11 +63,29 @@ def build(src: Path, execute: bool, timeout: int) -> float:
     return time.time() - start
 
 
+def refresh_text(src: Path) -> None:
+    """Atualiza só o markdown do .ipynb, preservando as saídas — válido apenas se o código não mudou."""
+    target = OUT / f"{src.stem}.ipynb"
+    new = jupytext.read(src)
+    old = nbformat.read(target, as_version=4)
+    new_code = [c for c in new.cells if c.cell_type == "code"]
+    old_code = [c for c in old.cells if c.cell_type == "code"]
+    if [c.source.strip() for c in new_code] != [c.source.strip() for c in old_code]:
+        raise ValueError("o código mudou: é preciso reexecutar o notebook")
+    for fresh, executed in zip(new_code, old_code, strict=True):
+        fresh.outputs = executed.outputs
+        fresh.execution_count = executed.execution_count
+    new.metadata["kernelspec"] = old.metadata.get("kernelspec", {})
+    scrub(new)
+    nbformat.write(new, target)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("prefixes", nargs="*")
     ap.add_argument("--no-exec", action="store_true")
     ap.add_argument("--timeout", type=int, default=1800)
+    ap.add_argument("--text-only", action="store_true", help="atualiza o markdown e mantém as saídas")
     ap.add_argument("--scrub-only", action="store_true", help="só limpa as saídas dos .ipynb existentes")
     args = ap.parse_args()
 
@@ -87,6 +106,10 @@ def main() -> int:
     for src in sources:
         # Um notebook que falha não impede os outros: o resumo no fim diz quais refazer.
         try:
+            if args.text_only:
+                refresh_text(src)
+                print(f"ok    {src.stem}.ipynb  (só texto)", flush=True)
+                continue
             secs = build(src, execute=not args.no_exec, timeout=args.timeout)
             print(f"ok    {src.stem}.ipynb  ({secs:.0f}s)", flush=True)
         except Exception as exc:  # noqa: BLE001

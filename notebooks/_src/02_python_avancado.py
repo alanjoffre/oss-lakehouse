@@ -6,7 +6,7 @@
 # > context managers que viram infraestrutura, typing que documenta contrato, validação com pydantic,
 # > concorrência escolhida pelo tipo de gargalo, e testes.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Python avançado | §1–§10 (generators, itertools, decorators, context managers, typing, dataclasses × pydantic, functools, concorrência, erros e logs) |
 # | Processamento de dados | §1 (arquivo de 18 MB com memória constante), §8 (paralelismo medido), §13–§14 (Python × Spark, UDF) |

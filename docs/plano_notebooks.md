@@ -2,7 +2,7 @@
 
 | # | Notebook (arquivo em `notebooks/_src/`) | Tema |
 |---|---|---|
-| 00 | `00_mapa_da_vaga_e_arquitetura.py` | Requisitos da vaga → onde cada um aparece; arquitetura Lakehouse/Medallion na Azure; ADRs |
+| 00 | `00_mapa_de_competencias_e_arquitetura.py` | Competências → onde cada uma aparece; arquitetura Lakehouse/Medallion na Azure; ADRs |
 | 01 | `01_ambiente_local_databricks_azure.py` | Spark+Delta local, Databricks Free Edition, Azure; o que muda entre eles |
 | 02 | `02_python_avancado.py` | Python para engenharia de dados: typing, generators, decorators, context managers, dataclasses/pydantic, pytest |
 | 03 | `03_ingestao_arquivos_auto_loader.py` | Ingestão incremental de arquivos (GH Archive): Auto Loader, checkpoint, schema evolution, rescued data, backfill |

@@ -5,7 +5,7 @@
 # > e DataFrame API — com um `assert` contra o resultado esperado, e que as mesmas soluções rodam na bronze real
 # > do GH Archive (~279 mil eventos). Fecha com 3 exercícios de Python puro.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Python avançado | Exercícios 16–18 (sem pandas; arquivo maior que a memória) |
 # | Databricks e processamento de dados | Exercícios 1–15 em Spark SQL **e** PySpark, aplicados à bronze |

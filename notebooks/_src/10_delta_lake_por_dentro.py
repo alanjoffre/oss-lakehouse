@@ -13,7 +13,7 @@
 # > com transação ACID, time travel, evolução de schema, deletion vectors e Change Data Feed —
 # > e o que cada operação (DELETE, MERGE, OPTIMIZE, VACUUM) realmente grava.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | §1–§12: o formato de tabela por trás de tudo no Databricks |
 # | Arquitetura e desenvolvimento de pipelines | §3 (concorrência entre jobs), §5 (retenção), §10 (consumidor incremental com CDF) |

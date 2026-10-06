@@ -13,7 +13,7 @@
 # > duplica, o checkpoint guarda o que já foi visto — e mostra onde isso **deixa de valer** (checkpoint
 # > perdido, registro corrompido lido em silêncio) e como o Auto Loader resolve no Databricks.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Python avançado | download idempotente/atômico com retry (`oss_lakehouse.sources.gharchive`) |
 # | Databricks e processamento de dados | Auto Loader (`cloudFiles`), schema evolution, rescued data ☁️ |

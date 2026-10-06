@@ -28,7 +28,7 @@ notebooks: ## Gera e executa todos os notebooks
 nb: ## Gera e executa um notebook: make nb N=05
 	$(SPARK) uv run python scripts/build_notebooks.py $(N)
 
-guia: ## Regenera o GUIA_ENTREVISTA.md a partir dos notebooks
+guia: ## Regenera o GUIA_DE_ESTUDO.md a partir dos notebooks
 	uv run python scripts/build_guia.py
 
 build: ## Gera o wheel do pacote (o artefato que o job do Databricks instala)

@@ -13,7 +13,7 @@
 # > em vez de apagar em silêncio, **falha** quando o contrato com o consumidor quebra — e mostra o que o
 # > Spark Declarative Pipelines open source faz (e não faz) em relação ao Lakeflow.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Arquitetura de pipelines | expectations warn/drop/fail, quarentena, contrato como portão de publicação |
 # | Databricks | Lakeflow Declarative Pipelines (`@dp.expect_or_drop`) ☁️, DQX ☁️, constraints Delta 🧪 |

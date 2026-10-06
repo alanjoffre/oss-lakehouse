@@ -13,7 +13,7 @@
 # > **watermark** que descarta dado atrasado, **MERGE idempotente** por micro-lote e garantia **exactly-once**
 # > — tudo provado com as métricas do próprio Spark.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | Structured Streaming, janelas, watermark, state store (RocksDB), triggers |
 # | Arquitetura e desenvolvimento de pipelines | landing em micro-lotes, checkpoint, exactly-once, `foreachBatch` + MERGE |

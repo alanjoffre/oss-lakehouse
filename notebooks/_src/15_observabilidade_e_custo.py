@@ -12,7 +12,7 @@
 # > Este notebook prova que dá para responder "o que rodou, quanto demorou, o que falhou, o dado está
 # > atualizado e quanto custou" com SQL — sem abrir a Spark UI e sem depender da memória de ninguém.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Arquitetura e desenvolvimento de pipelines | §2–§3 (registro de execução por etapa), §8 (freshness, volume, schema, distribuição, lineage), §9 (SLI/SLO/SLA) |
 # | Databricks e processamento de dados | §5 (Spark UI REST), §6 (`DESCRIBE HISTORY`), §7 (`StreamingQueryListener`), ☁️ system tables e alertas SQL |

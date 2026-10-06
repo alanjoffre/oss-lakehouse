@@ -13,7 +13,7 @@
 # > mostra como ele se compara ao Databricks e ao Azure Databricks, e diz com honestidade o que não dá para
 # > reproduzir localmente.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | §1–§5 (arquitetura do Spark), §7 (runtimes, compute, Free Edition, `dbutils`, Volumes) |
 # | Microsoft Azure | §8 (workspace, VNet injection, Key Vault, Access Connector) |

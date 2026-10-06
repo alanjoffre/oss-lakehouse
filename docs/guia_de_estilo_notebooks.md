@@ -14,7 +14,7 @@ Quem lê precisa sair sabendo *o que é*, *por que existe*, *como funciona* e *q
 ```text
 # NN · Título
 > Uma frase: o que este notebook prova.
-Tabela "Requisito da vaga → onde aparece aqui" (curta).
+Tabela "Competência → onde aparece aqui" (curta).
 Legenda: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui)
 
 ## Setup              (imports, get_spark(), caminhos via get_settings())

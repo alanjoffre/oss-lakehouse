@@ -13,7 +13,7 @@
 # > e que a dimensão de repositórios guarda o **histórico real de renomeações** — inclusive quando o
 # > dado chega fora de ordem.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Python avançado | funções puras e testadas em `oss_lakehouse.silver` e `oss_lakehouse.scd2` |
 # | Databricks e processamento de dados | MERGE do Delta, `foreachBatch`, deletion vectors, Auto CDC ☁️ |

@@ -4,7 +4,7 @@ Um lakehouse completo sobre dados públicos do ecossistema open source — **PyS
 
 Cada notebook explica **o que é, por que existe, como funciona e quando não usar**, mostra o código rodando com a evidência (plano de execução, contagem, antes/depois) e fecha com perguntas de entrevista respondidas.
 
-> **Por onde começar:** [`00 · Mapa da vaga e arquitetura`](notebooks/00_mapa_da_vaga_e_arquitetura.ipynb) · [`GUIA_ENTREVISTA.md`](GUIA_ENTREVISTA.md) (199 perguntas com resposta, por tema)
+> **Por onde começar:** [`00 · Mapa de competências e arquitetura`](notebooks/00_mapa_de_competencias_e_arquitetura.ipynb) · [`GUIA_DE_ESTUDO.md`](GUIA_DE_ESTUDO.md) (199 perguntas com resposta, por tema)
 
 ## Os dados
 
@@ -48,7 +48,7 @@ O mesmo código roda **local** (Spark 4.2 + Delta 4.4, pastas em `data/`) e no *
 
 | # | Notebook | O que demonstra |
 |---|---|---|
-| 00 | [Mapa da vaga e arquitetura](notebooks/00_mapa_da_vaga_e_arquitetura.ipynb) | Requisito → onde aparece; Lakehouse, Medallion, batch × streaming; roteiro de demonstração |
+| 00 | [Mapa de competências e arquitetura](notebooks/00_mapa_de_competencias_e_arquitetura.ipynb) | Competência → onde aparece; Lakehouse, Medallion, batch × streaming; roteiro de demonstração |
 | 01 | [Ambiente: local, Databricks e Azure](notebooks/01_ambiente_local_databricks_azure.ipynb) | Driver/executor, configuração da sessão, tipos de compute, paridade local × Databricks |
 | 02 | [Python avançado](notebooks/02_python_avancado.ipynb) | Generators, decorators, typing, pydantic, concorrência, pytest — com dados reais |
 | 03 | [Ingestão incremental de arquivos](notebooks/03_ingestao_arquivos_auto_loader.ipynb) | Checkpoint, exactly-once, registro corrompido, backfill, Auto Loader |
@@ -79,7 +79,7 @@ make data       # baixa um dia do GH Archive (~470 MB) — o único passo que pr
 make demo       # bronze → silver → gold → quality + consultas de negócio
 make test       # suíte de testes (Spark local)
 make nb N=05    # gera e executa um notebook
-make guia       # regenera o GUIA_ENTREVISTA.md a partir dos notebooks
+make guia       # regenera o GUIA_DE_ESTUDO.md a partir dos notebooks
 ```
 
 `make help` lista todos os comandos.

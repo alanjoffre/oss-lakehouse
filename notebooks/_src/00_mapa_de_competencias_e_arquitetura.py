@@ -7,13 +7,13 @@
 # ---
 
 # %% [markdown]
-# # 00 · Mapa da vaga e arquitetura
+# # 00 · Mapa de competências e arquitetura
 #
-# > Este notebook liga cada requisito da vaga a um notebook que o demonstra, desenha a arquitetura alvo na Azure
+# > Este notebook liga cada competência de engenharia de dados a um notebook que o demonstra, desenha a arquitetura alvo na Azure
 # > e a equivalente local, explica os conceitos de base (lakehouse, Medallion, batch × streaming, Lambda × Kappa,
 # > ETL × ELT) e mostra o estado real do lakehouse local agora.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Arquitetura e desenvolvimento de pipelines | §3 a §8, ADRs (§9) |
 # | Definição de arquiteturas e evolução de soluções (diferencial) | §3, §5 (críticas ao Medallion), §9 |
@@ -48,30 +48,30 @@ spark = get_spark("00")
 print(f"Spark {spark.version} | raiz dos dados: {DATA.relative_to(PROJECT_ROOT)}/")
 
 # %% [markdown]
-# ## 1. Mapa da vaga → onde cada requisito é demonstrado 🧪
+# ## 1. Mapa de competências → onde cada uma é demonstrada 🧪
 #
-# **O que é** — A tabela de rastreabilidade (*traceability matrix*) entre o que a vaga pede e a evidência neste
-# repositório. Cada linha aponta para o notebook (trilha completa em `docs/plano_notebooks.md`).
+# **O que é** — A tabela de rastreabilidade (*traceability matrix*) entre o que se espera de um engenheiro de
+# dados sênior e a evidência neste repositório. Cada linha aponta para o notebook (trilha completa em `docs/plano_notebooks.md`).
 #
 # **Por que importa** — Numa entrevista, "tenho experiência com X" vale pouco; "abre o notebook 09, a célula
 # mostra o `explain()` antes e depois do broadcast" vale muito. A tabela é o índice para responder com prova.
 #
-# | Requisito (R) / Diferencial (D) | Notebook(s) e tema | O que mostrar |
+# | Competência | Notebook(s) e tema | O que mostrar |
 # |---|---|---|
-# | R · Experiência sólida em Engenharia de Dados | 03 ingestão de arquivos · 04 API incremental · 05 MERGE/SCD2 · 07 modelagem · 17 system design | pipeline de ponta a ponta, idempotente, com dado atrasado e duplicado |
-# | R · Python avançado | 02 Python avançado · `src/oss_lakehouse/` · `tests/` | typing, generators, decorators (`utils/retry.py`), pydantic, pytest |
-# | R · Databricks e processamento de dados | 01 ambiente · 03 Auto Loader · 08 Lakeflow/SDP · 09 performance · 10 Delta por dentro | plano físico, skew, AQE, transaction log, time travel |
-# | R · Microsoft Azure | 01 §8 Azure Databricks · 14 Terraform + Azurite · §3 deste notebook | ADLS Gen2, Access Connector, Key Vault, VNet injection |
-# | R · Git e versionamento | 13 Git, CI/CD e bundles | trunk-based, Conventional Commits, SemVer de pacote e de contrato, revert × reset |
-# | R · Arquitetura e desenvolvimento de pipelines | 00 (este) · 05 · 06 streaming · 08 qualidade · ADRs | Medallion, contratos, quarentena, decisões registradas |
-# | R · IA aplicada à engenharia de dados | 12 IA aplicada · ADR 0006 | LLM para PII/classificação/regras, **com avaliação** e humano no circuito |
-# | R · Comunicação, multidisciplinar, ágil | §2 roteiros · ADRs · 13 PR e revisão · 17 simulado | explicar decisão com contexto e alternativas |
-# | D · Ferramentas de IA para engenharia de dados | 12 · 13 (IA no fluxo de desenvolvimento) | avaliação, custo, rastreabilidade |
-# | D · Projetos de engenharia com Databricks | 03 · 08 · 11 Unity Catalog · 13 bundles · 15 observabilidade | job multi-tarefa, system tables, governança |
-# | D · Definição de arquitetura e evolução | 00 §3–§8 · ADRs · 17 | trade-offs explícitos, o que muda quando o volume cresce |
-# | D · Projetos ágeis | 13 (trunk-based, PR pequeno, CI) · 17 | entrega incremental com teste e deploy automatizado |
-# | (extra) Governança e LGPD | 11 Unity Catalog e LGPD | grants, row filter, column mask, lineage |
-# | (extra) Live coding | 16 exercícios SQL/PySpark | janelas, dedup, top-N, sessionização |
+# | Engenharia de dados de ponta a ponta | 03 ingestão de arquivos · 04 API incremental · 05 MERGE/SCD2 · 07 modelagem · 17 system design | pipeline de ponta a ponta, idempotente, com dado atrasado e duplicado |
+# | Python avançado | 02 Python avançado · `src/oss_lakehouse/` · `tests/` | typing, generators, decorators (`utils/retry.py`), pydantic, pytest |
+# | Databricks e processamento de dados | 01 ambiente · 03 Auto Loader · 08 Lakeflow/SDP · 09 performance · 10 Delta por dentro | plano físico, skew, AQE, transaction log, time travel |
+# | Microsoft Azure | 01 §8 Azure Databricks · 14 Terraform + Azurite · §3 deste notebook | ADLS Gen2, Access Connector, Key Vault, VNet injection |
+# | Git e versionamento | 13 Git, CI/CD e bundles | trunk-based, Conventional Commits, SemVer de pacote e de contrato, revert × reset |
+# | Arquitetura e desenvolvimento de pipelines | 00 (este) · 05 · 06 streaming · 08 qualidade · ADRs | Medallion, contratos, quarentena, decisões registradas |
+# | IA aplicada à engenharia de dados | 12 IA aplicada · ADR 0006 | LLM para PII/classificação/regras, **com avaliação** e humano no circuito |
+# | Comunicação, multidisciplinar, ágil | §2 roteiros · ADRs · 13 PR e revisão · 17 simulado | explicar decisão com contexto e alternativas |
+# | Ferramentas de IA para engenharia de dados | 12 · 13 (IA no fluxo de desenvolvimento) | avaliação, custo, rastreabilidade |
+# | Projetos de engenharia com Databricks | 03 · 08 · 11 Unity Catalog · 13 bundles · 15 observabilidade | job multi-tarefa, system tables, governança |
+# | Definição de arquitetura e evolução | 00 §3–§8 · ADRs · 17 | trade-offs explícitos, o que muda quando o volume cresce |
+# | Projetos ágeis | 13 (trunk-based, PR pequeno, CI) · 17 | entrega incremental com teste e deploy automatizado |
+# | Governança e LGPD | 11 Unity Catalog e LGPD | grants, row filter, column mask, lineage |
+# | Live coding | 16 exercícios SQL/PySpark | janelas, dedup, top-N, sessionização |
 #
 # **Como funciona** — A célula abaixo lê o plano da trilha e confere quais notebooks já existem como fonte e como
 # `.ipynb` executado (o repositório é construído em paralelo; o que falta aparece como pendente).
@@ -90,8 +90,8 @@ for num, arquivo, tema in linhas:
 print(f"\n{len(linhas)} notebooks na trilha; {prontos} com .ipynb executado neste momento")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Organizei o repositório como prova dos requisitos: cada notebook cobre um tema da
-# > vaga com código executado e saída versionada — ingestão incremental, MERGE e SCD2, streaming, performance,
+# > 🎤 **Resposta de 30 s:** "Organizei o repositório como prova por competência: cada notebook cobre um
+# > tema com código executado e saída versionada — ingestão incremental, MERGE e SCD2, streaming, performance,
 # > Delta por dentro, governança, IA com avaliação, CI/CD com bundles e Terraform da Azure. Posso abrir qualquer
 # > um e rodar ao vivo."
 #
@@ -686,7 +686,7 @@ if log_dir.exists():
 # %% [markdown]
 # ## Resumo
 #
-# - Cada requisito da vaga tem um notebook com evidência executada (§1); roteiros de 10 e 30 minutos (§2).
+# - Cada competência tem um notebook com evidência executada (§1); roteiros de 10 e 30 minutos (§2).
 # - Alvo: fontes → landing (ADLS) → bronze/silver/gold Delta no Unity Catalog → SQL/IA; Lakeflow Jobs, bundles,
 #   Terraform, Key Vault; local, cada peça tem um substituto e o código é o mesmo.
 # - Lakehouse = log transacional sobre arquivos abertos; Medallion = qualidade por camada (não é modelagem).

@@ -12,7 +12,7 @@
 # > Um cliente de API que respeita paginação, cota, ETag e falhas, grava a resposta **bruta** na landing,
 # > consolida com MERGE idempotente e, reexecutado, busca **só o que mudou** desde a última marca d'água.
 #
-# | Requisito da vaga | Onde aparece aqui |
+# | Competência | Onde aparece aqui |
 # |---|---|
 # | Python avançado | cliente HTTP com `requests.Session`, retry por decorator, adapter de gravação/replay |
 # | Arquitetura e desenvolvimento de pipelines | landing bruta → Silver por MERGE; estado incremental; idempotência |
