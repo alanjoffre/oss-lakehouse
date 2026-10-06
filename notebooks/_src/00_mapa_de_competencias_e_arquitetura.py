@@ -172,6 +172,8 @@ print(f"\n{len(linhas)} notebooks na trilha; {prontos} com .ipynb executado nest
 #
 # **Como funciona** — Arquitetura alvo:
 #
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb00-1)
+#
 # ```mermaid
 # flowchart LR
 #     subgraph SRC["Fontes"]
@@ -398,6 +400,8 @@ for rodada in (1, 2):
 #   rápido e aproximado) — e uma *serving layer* que junta as duas.
 # - **Kappa:** uma trilha só, de streaming, sobre um **log reprocessável** (Kafka/Event Hubs, ou uma tabela
 #   Delta); reprocessar = reler o log do início com o código novo.
+#
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb00-2)
 #
 # ```mermaid
 # flowchart LR

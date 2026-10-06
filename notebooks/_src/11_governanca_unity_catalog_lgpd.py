@@ -155,6 +155,8 @@ print(f"  {n_payload:>5} eventos de outros atores com o login dela dentro do pay
 #
 # **Como funciona**
 #
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb11-1)
+#
 # ```mermaid
 # flowchart TD
 #     M["Metastore<br/>(1 por região, por conta)"] --> C1["Catalog<br/>prod"] & C2["Catalog<br/>dev"]

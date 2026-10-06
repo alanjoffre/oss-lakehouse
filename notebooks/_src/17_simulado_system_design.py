@@ -202,6 +202,8 @@ print(f"\nEvent Hubs: 1 unidade de vazão (TU, Standard) ≈ 1 MB/s ou 1.000 eve
 #
 # **4. Arquitetura**
 #
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb17-1)
+#
 # ```mermaid
 # flowchart LR
 #   app[Apps web/mobile] -->|HTTPS + SDK| col[API de coleta<br/>App Service / APIM]
@@ -282,6 +284,8 @@ print(f"\nEvent Hubs: 1 unidade de vazão (TU, Standard) ≈ 1 MB/s ou 1.000 eve
 # | **Debezium** (Kafka Connect) | Lê o log (SQL Server CDC / Postgres replicação lógica) e publica no Kafka/Event Hubs | Muitos consumidores além do lake; latência de segundos | Operar Kafka Connect; *snapshot* inicial; schema history |
 # | **Lakeflow Connect** (Databricks) | Conector gerenciado que lê o CDC e grava Delta direto | Querer menos peças para operar | Bancos e recursos suportados variam — confira a doc atual |
 # | **ADF** (Azure Data Factory) | Cópia incremental por marca d'água (`updated_at`) ou pelo recurso de CDC do ADF | Lote a cada 15+ min, time já usa ADF | Marca d'água **não vê delete físico**; carga no banco |
+#
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb17-2)
 #
 # ```mermaid
 # flowchart LR
@@ -397,6 +401,8 @@ print("update atrasado de uma chave apagada:", [r for r in estado() if r[0] == 2
 # região, app)? quantos falsos positivos o time tolera por dia? quem recebe o alerta e o que faz com ele
 # (runbook)? Precisão importa mais que latência, ou o contrário?
 #
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb17-3)
+#
 # ```mermaid
 # flowchart LR
 #   eh[(Event Hubs)] --> ss[Structured Streaming<br/>janela de 1 min + watermark]
@@ -481,6 +487,8 @@ anomalias.select(
 #    *Lakehouse Federation* para consultar o legado durante a transição.
 # 4. **Paridade:** rodar os dois em paralelo (*dual run*) e **reconciliar** todo dia.
 # 5. **Corte:** por consumidor (relatório a relatório), com plano de volta (*rollback*) e data de desligamento.
+#
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb17-4)
 #
 # ```mermaid
 # flowchart LR

@@ -68,6 +68,8 @@ print(f"sessão pronta em {startup_s:.1f}s | Spark {spark.version} | master={sc.
 #
 # **Como funciona**
 #
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb01-1)
+#
 # ```mermaid
 # flowchart LR
 #     subgraph Driver["Driver (seu código)"]
@@ -385,6 +387,8 @@ for nome, s in [("local", local), ("databricks", nuvem)]:
 #
 # **Como funciona**
 #
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb01-2)
+#
 # ```mermaid
 # flowchart LR
 #     C["Cliente fino<br/>(pyspark-client / databricks-connect)"] -- "plano lógico (protobuf, gRPC)" --> S["Servidor Spark Connect<br/>(driver no cluster)"]
@@ -526,6 +530,8 @@ print(f"tem sparkContext? {hasattr(spark, 'sparkContext')} (no Connect, acessar 
 # storage por rede privada? Onde ficam os segredos? Quem acessa o ADLS — uma pessoa ou uma identidade gerenciada?
 #
 # **Como funciona**
+#
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb01-3)
 #
 # ```mermaid
 # flowchart TB

@@ -79,7 +79,8 @@ flowchart LR
 | Infraestrutura | Azurite (emulador) | Terraform — [`infra/terraform/azure`](infra/terraform/azure) |
 
 O que muda entre os dois ambientes é a raiz dos caminhos e a sessão — nunca o código do pipeline
-([ADR 0005](docs/adr/0005-local-first-paridade-databricks.md)).
+([ADR 0005](docs/adr/0005-local-first-paridade-databricks.md)). A arquitetura alvo completa na Azure — rede,
+identidade, catálogo, orquestração — está em [docs/diagramas.md](docs/diagramas.md#nb00-1).
 
 ### Os dados
 
@@ -184,7 +185,7 @@ docs/               ADRs, contratos das tabelas, guia de estilo dos notebooks
 scripts/            build dos notebooks e do guia, controle de concorrência do Spark local
 ```
 
-Documentação complementar: [contratos das tabelas](docs/contratos_de_tabelas.md) ·
+Documentação complementar: [diagramas](docs/diagramas.md) · [contratos das tabelas](docs/contratos_de_tabelas.md) ·
 [guia de estilo dos notebooks](docs/guia_de_estilo_notebooks.md) · [trilha](docs/plano_notebooks.md) ·
 [ADRs](docs/adr/README.md).
 

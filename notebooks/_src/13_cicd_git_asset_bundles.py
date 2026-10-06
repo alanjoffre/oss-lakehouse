@@ -437,6 +437,8 @@ run([sys.executable, "-m", "ruff", "check", "src", "tests", "scripts"])
 #
 # **O que é** — Camadas de teste, da mais barata e numerosa para a mais cara e rara:
 #
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb13-1)
+#
 # ```mermaid
 # flowchart TB
 #     E2E["Ponta a ponta<br/>job inteiro no alvo dev do bundle; make demo"] --> DQ
@@ -578,6 +580,8 @@ print("entry_points.txt no wheel?", tem_entry_points)
 # | `prod` | `production` | valida que não há caminho pessoal; `run_as` = **service principal**; permissões explícitas; cluster não pode ser sobrescrito na linha de comando |
 #
 # Fonte: [deployment modes](https://docs.databricks.com/aws/en/dev-tools/bundles/deployment-modes).
+#
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb13-2)
 #
 # ```mermaid
 # flowchart LR
@@ -730,6 +734,8 @@ else:
 # sentido): repetível, auditável, sem credencial pessoal.
 #
 # **Como funciona**
+#
+# > 📐 O visualizador de notebooks do GitHub não renderiza Mermaid — diagrama renderizado: [docs/diagramas.md](https://github.com/alanjoffre/oss-lakehouse/blob/main/docs/diagramas.md#nb13-3)
 #
 # ```mermaid
 # flowchart LR
