@@ -29,12 +29,16 @@ from oss_lakehouse.governance import mascara_formato_py
 
 
 class ColunaPerfil(BaseModel):
+    """O que o LLM vê de uma coluna: nome, tipo e amostras já com máscara de formato — nunca valor real."""
+
     nome: str
     tipo: str
     amostras: list[str]  # já mascaradas
 
 
 class ClassificacaoColuna(BaseModel):
+    """Veredito do LLM para uma coluna: é PII?, categoria, classificação e tratamento sugerido."""
+
     nome: str
     pii: bool
     categoria: Literal[
@@ -51,6 +55,8 @@ class ClassificacaoColuna(BaseModel):
 
 
 class RespostaPII(BaseModel):
+    """Saída validada do prompt `classificar_pii`: uma classificação por coluna."""
+
     colunas: list[ClassificacaoColuna]
 
 
@@ -111,6 +117,7 @@ def perfil_colunas(
 def request_pii(
     tabela: str, contexto: str, perfis: Sequence[ColunaPerfil], model: str = DEFAULT_MODEL
 ) -> LLMRequest:
+    """Monta o pedido do prompt `classificar_pii` com os perfis (já mascarados) em JSON. Não chama o LLM."""
     colunas = json.dumps([p.model_dump() for p in perfis], ensure_ascii=False, indent=0)
     return carregar_prompt("classificar_pii").request(
         model=model, max_tokens=4096, tabela=tabela, contexto=contexto, colunas=colunas
@@ -120,6 +127,10 @@ def request_pii(
 def classificar_pii(
     client: LLMClient, tabela: str, contexto: str, perfis: Sequence[ColunaPerfil], model: str = DEFAULT_MODEL
 ) -> tuple[dict[str, ClassificacaoColuna], LLMResponse]:
+    """Chama o LLM e devolve {nome da coluna: classificação} + a resposta.
+
+    Coluna que o modelo omitir fica fora do dict; nome repetido na saída: vale o último.
+    """
     saida, resp = completar(client, request_pii(tabela, contexto, perfis, model), RespostaPII)
     return {c.nome: c for c in saida.colunas}, resp
 
@@ -196,6 +207,7 @@ _OBS = [
 
 
 def cpf_ficticio(rng: random.Random) -> str:
+    """CPF aleatório no formato `000.000.000-00`, com os dois dígitos verificadores válidos."""
     base = [rng.randint(0, 9) for _ in range(9)]
     for peso_ini in (10, 11):
         soma = sum(d * p for d, p in zip(base, range(peso_ini, 1, -1), strict=False))
@@ -206,6 +218,7 @@ def cpf_ficticio(rng: random.Random) -> str:
 
 
 def tabela_clientes_sintetica(spark: SparkSession, n: int = 200, seed: int = 42) -> DataFrame:
+    """DataFrame de `n` clientes fictícios (15 colunas, com e sem PII). Mesmo `seed` → mesmas linhas."""
     rng = random.Random(seed)
     linhas = []
     for k in range(n):

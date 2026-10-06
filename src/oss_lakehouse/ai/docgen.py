@@ -21,11 +21,15 @@ MAX_TABELA, MAX_COLUNA = 300, 160
 
 
 class ComentarioColuna(BaseModel):
+    """Comentário proposto para uma coluna (texto do LLM ou do revisor, ainda sem escape de SQL)."""
+
     nome: str
     comentario: str
 
 
 class DocTabela(BaseModel):
+    """Saída validada do prompt `documentar_tabela`: comentário da tabela + um por coluna."""
+
     comentario_tabela: str
     colunas: list[ComentarioColuna]
 
@@ -33,6 +37,7 @@ class DocTabela(BaseModel):
 def request_doc(
     tabela: str, contexto: str, perfil: list[dict[str, Any]], model: str = DEFAULT_MODEL
 ) -> LLMRequest:
+    """Monta o pedido do prompt `documentar_tabela`; `perfil` entra como JSON. Não chama o LLM."""
     return carregar_prompt("documentar_tabela").request(
         model=model,
         max_tokens=4096,
@@ -45,6 +50,7 @@ def request_doc(
 def gerar_doc(
     client: LLMClient, tabela: str, contexto: str, perfil: list[dict[str, Any]], model: str = DEFAULT_MODEL
 ) -> tuple[DocTabela, LLMResponse]:
+    """Chama o LLM e devolve a documentação validada + a resposta. Fora do contrato: `LLMOutputError`."""
     return completar(client, request_doc(tabela, contexto, perfil, model), DocTabela)
 
 
@@ -68,17 +74,24 @@ def _literal_sql(texto: str, limite: int) -> str:
 
 
 def sql_comentarios(caminho: str, doc: DocTabela) -> list[str]:
+    """Um `ALTER TABLE` para o comentário da tabela e um por coluna de `doc`. Só monta, não executa.
+
+    O texto sai escapado e truncado (`MAX_TABELA`/`MAX_COLUNA`). O nome da coluna vem do modelo, então a
+    crase dentro dele é duplicada: sem isso, um nome com crase fecharia o identificador e injetaria SQL.
+    """
     alvo = f"delta.`{caminho}`"
     comentario = _literal_sql(doc.comentario_tabela, MAX_TABELA)
     sqls = [f"ALTER TABLE {alvo} SET TBLPROPERTIES ('comment' = {comentario})"]
     for c in doc.colunas:
+        nome = c.nome.replace("`", "``")
         sqls.append(
-            f"ALTER TABLE {alvo} ALTER COLUMN `{c.nome}` COMMENT {_literal_sql(c.comentario, MAX_COLUNA)}"
+            f"ALTER TABLE {alvo} ALTER COLUMN `{nome}` COMMENT {_literal_sql(c.comentario, MAX_COLUNA)}"
         )
     return sqls
 
 
 def aplicar(spark: SparkSession, caminho: str, doc: DocTabela) -> int:
+    """Executa os `ALTER TABLE` de `sql_comentarios` na tabela Delta e devolve quantos comandos rodou."""
     sqls = sql_comentarios(caminho, doc)
     for s in sqls:
         spark.sql(s)

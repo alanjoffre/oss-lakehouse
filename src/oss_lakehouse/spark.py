@@ -19,6 +19,11 @@ def _on_databricks() -> bool:
 
 
 def get_spark(app_name: str = "oss-lakehouse", **extra_conf: str) -> SparkSession:
+    """Sessão Spark com Delta. No Databricks devolve a sessão ativa e ignora `app_name`/`extra_conf`.
+
+    Local, cria com as configs do projeto (UTC, shuffle partitions de `Settings`) + `extra_conf`.
+    É `getOrCreate`: se já existe sessão no processo, ela é reaproveitada.
+    """
     if _on_databricks():
         return SparkSession.builder.getOrCreate()
 

@@ -167,6 +167,16 @@ def test_sql_de_comentario_escapa_texto_do_llm():
     assert sql.endswith("COMMENT 'it\\'s\\'); DROP TABLE x; -- linha 2'")
 
 
+def test_sql_de_comentario_escapa_crase_no_nome_da_coluna():
+    # O nome da coluna vem do modelo: uma crase fecharia o identificador e abriria espaço para outro comando.
+    doc = docgen.DocTabela(
+        comentario_tabela="t",
+        colunas=[docgen.ComentarioColuna(nome="a` COMMENT 'x'; DROP TABLE t; --", comentario="c")],
+    )
+    sql = docgen.sql_comentarios("/t", doc)[1]
+    assert "`a`` COMMENT 'x'; DROP TABLE t; --`" in sql
+
+
 def test_revisao_de_doc_rejeita_substitui_e_descarta_coluna_inventada():
     doc = docgen.DocTabela(
         comentario_tabela="t",

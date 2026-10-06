@@ -76,6 +76,11 @@ class RateLimit:
 
 @dataclass
 class ApiResponse:
+    """Resposta da API: `data` é o JSON decodificado (só em 200 com corpo; senão `None`).
+
+    As propriedades leem os cabeçalhos: ETag, cota (`rate_limit`) e paginação (`links`).
+    """
+
     status: int
     url: str
     data: Any
@@ -314,6 +319,10 @@ class CassetteAdapter(HTTPAdapter):
 
 
 def cassette_session(cassette_dir: str | Path, mode: Literal["record", "replay"]) -> requests.Session:
+    """`requests.Session` com o `CassetteAdapter` montado em http e https.
+
+    `record` chama a rede e grava; `replay` só lê do disco e levanta `CassetteMiss` se faltar gravação.
+    """
     s = requests.Session()
     adapter = CassetteAdapter(cassette_dir, mode)
     s.mount("https://", adapter)
@@ -347,6 +356,12 @@ def write_landing(resp: ApiResponse, path: Path) -> Path:
 
 @dataclass
 class FetchReport:
+    """Resumo de uma coleta: arquivos gravados na landing e chamadas HTTP feitas.
+
+    `status` (HTTP por repositório) é de `fetch_repos`; páginas, itens, `since` e `new_watermark`
+    são de `fetch_issues_incremental`.
+    """
+
     files: list[Path] = field(default_factory=list)
     status: dict[str, int] = field(default_factory=dict)
     calls: int = 0

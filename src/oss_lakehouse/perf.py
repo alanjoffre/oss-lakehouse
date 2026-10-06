@@ -142,6 +142,10 @@ class DistStats:
 
 
 def dist_stats(values: Sequence[float]) -> DistStats:
+    """Resume uma amostra em n/min/mediana/p95/max. Lista vazia levanta `ValueError`.
+
+    O p95 é o elemento mais próximo da posição 95% (sem interpolar).
+    """
     if not values:
         raise ValueError("lista vazia")
     ordered = sorted(values)
@@ -226,6 +230,11 @@ def parse_metric_value(text: str) -> float | None:
 
 @dataclass(frozen=True)
 class StageSummary:
+    """Métricas de um stage, vindas da REST API da Spark UI; `as_row()` converte para MB e segundos.
+
+    `run_time_ms` é o `executorRunTime`: soma do tempo das tasks, não tempo de relógio do stage.
+    """
+
     stage_id: int
     name: str
     num_tasks: int

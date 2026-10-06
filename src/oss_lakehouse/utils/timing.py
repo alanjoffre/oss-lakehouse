@@ -17,11 +17,17 @@ log = logging.getLogger(__name__)
 
 
 @overload
-def timed[**P, R](func: Callable[P, R], /) -> Callable[P, R]: ...
+def timed[**P, R](func: Callable[P, R], /) -> Callable[P, R]:
+    """Forma `@timed`, sem parênteses: recebe a função e a devolve decorada, com a mesma assinatura."""
+
+
 @overload
 def timed[**P, R](
     *, logger: logging.Logger | None = None, level: int = logging.INFO
-) -> Callable[[Callable[P, R]], Callable[P, R]]: ...
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    """Forma `@timed(logger=..., level=...)`: devolve o decorator que será aplicado à função."""
+
+
 def timed[**P, R](
     func: Callable[P, R] | None = None,
     /,

@@ -19,6 +19,8 @@ Layer = Literal["landing", "bronze", "silver", "gold", "quarantine"]
 
 
 class Settings(BaseSettings):
+    """Configuração do projeto, lida de variáveis `OSSLH_*` e do `.env` (chave desconhecida é ignorada)."""
+
     model_config = SettingsConfigDict(env_prefix="OSSLH_", env_file=".env", extra="ignore")
 
     env: Literal["local", "databricks"] = "local"
@@ -40,4 +42,8 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
+    """Instância única de `Settings`: o ambiente é lido uma vez por processo (`lru_cache`).
+
+    `get_settings.cache_clear()` força a releitura.
+    """
     return Settings()

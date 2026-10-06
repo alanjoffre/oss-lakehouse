@@ -33,6 +33,8 @@ Categoria = Literal[
 
 
 class Triagem(BaseModel):
+    """Saída validada do prompt `triagem_falha`: categoria, causa provável, ações e se precisa de humano."""
+
     categoria: Categoria
     causa_provavel: str
     acoes: list[str]
@@ -50,6 +52,11 @@ _CAMINHO = re.compile(r"(file:|abfss://|dbfs:|s3a?://)?(/[\w.\-=@]+){2,}/?")
 def normalizar_erro(
     mensagem: str, raizes: tuple[str, ...] = (), max_linhas: int = 12, max_chars: int = 1500
 ) -> str:
+    """Erro pronto para sair do perímetro e para servir de chave de cache: mesmo erro → mesmo texto.
+
+    `raizes` viram `<raiz>`; stack trace da JVM sai; valor citado, UUID, id de expressão e caminho
+    viram marcadores; o resultado é cortado em `max_linhas` e `max_chars`.
+    """
     texto = mensagem
     for raiz in sorted(raizes, key=len, reverse=True):
         if raiz:
@@ -64,6 +71,7 @@ def normalizar_erro(
 
 
 def request_triagem(job: str, contexto: str, erro: str, model: str = DEFAULT_MODEL) -> LLMRequest:
+    """Monta o pedido do prompt `triagem_falha`. Nada é mascarado aqui: passe `erro` por `normalizar_erro`."""
     return carregar_prompt("triagem_falha").request(
         model=model, max_tokens=1500, job=job, contexto=contexto, erro=erro
     )
@@ -72,4 +80,5 @@ def request_triagem(job: str, contexto: str, erro: str, model: str = DEFAULT_MOD
 def triar(
     client: LLMClient, job: str, contexto: str, erro: str, model: str = DEFAULT_MODEL
 ) -> tuple[Triagem, LLMResponse]:
+    """Chama o LLM e devolve a triagem validada + a resposta. Fora do contrato: `LLMOutputError`."""
     return completar(client, request_triagem(job, contexto, erro, model), Triagem)

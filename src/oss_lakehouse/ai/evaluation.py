@@ -33,12 +33,14 @@ GATES: dict[str, float] = {
 
 
 def carregar_jsonl(path: str | Path) -> list[dict[str, Any]]:
+    """Lê um arquivo JSON Lines (UTF-8) como lista de dicts; linhas em branco são ignoradas."""
     return [
         json.loads(linha) for linha in Path(path).read_text(encoding="utf-8").splitlines() if linha.strip()
     ]
 
 
 def acuracia(gold: Sequence[Any], pred: Sequence[Any]) -> float:
+    """Fração de posições em que `pred == gold` (0 a 1). `ValueError` se os tamanhos diferem ou vier vazio."""
     if len(gold) != len(pred) or not gold:
         raise ValueError("gold e pred precisam ter o mesmo tamanho (> 0)")
     return sum(g == p for g, p in zip(gold, pred, strict=True)) / len(gold)
@@ -67,6 +69,7 @@ def matriz_confusao(
 
 
 def formatar_matriz(m: list[list[int]], rotulos: Sequence[str]) -> str:
+    """Texto alinhado da matriz de `matriz_confusao`, com cabeçalho e a coluna extra `sem_resp`."""
     cab = ["gabarito \\ previsto", *rotulos, "sem_resp"]
     w = max(len(c) for c in cab)
     linhas = ["".join(c.rjust(w + 1) for c in cab)]
@@ -77,6 +80,8 @@ def formatar_matriz(m: list[list[int]], rotulos: Sequence[str]) -> str:
 
 @dataclass(frozen=True)
 class MetricasClasse:
+    """Métricas de uma classe (0 a 1); `suporte` = quantos exemplos do gabarito são dessa classe."""
+
     precisao: float
     recall: float
     f1: float
@@ -86,6 +91,10 @@ class MetricasClasse:
 def metricas_por_classe(
     gold: Sequence[str], pred: Sequence[str | None], rotulos: Sequence[str]
 ) -> dict[str, MetricasClasse]:
+    """Precisão, recall e F1 de cada rótulo (um contra o resto). Denominador zero vira 0.0.
+
+    Previsão `None` conta como erro (falso negativo da classe do gabarito).
+    """
     out = {}
     for r in rotulos:
         tp = sum(g == r and p == r for g, p in zip(gold, pred, strict=True))
@@ -99,12 +108,15 @@ def metricas_por_classe(
 
 
 def f1_macro(gold: Sequence[str], pred: Sequence[str | None], rotulos: Sequence[str]) -> float:
+    """Média simples do F1 das classes em `rotulos` — cada classe pesa igual, mesmo a rara."""
     m = metricas_por_classe(gold, pred, rotulos)
     return sum(v.f1 for v in m.values()) / len(m)
 
 
 @dataclass(frozen=True)
 class Binario:
+    """Contagens da matriz 2×2 (positivo = `True`). `precisao`/`recall` dão 0.0 com denominador zero."""
+
     tp: int
     fp: int
     fn: int
@@ -120,6 +132,7 @@ class Binario:
 
 
 def binario(gold: Sequence[bool], pred: Sequence[bool]) -> Binario:
+    """Conta TP/FP/FN/TN de duas listas de booleanos alinhadas; tamanhos diferentes levantam `ValueError`."""
     pares = list(zip(gold, pred, strict=True))
     return Binario(
         tp=sum(g and p for g, p in pares),
@@ -147,6 +160,10 @@ def kappa_cohen(a: Sequence[Any], b: Sequence[Any]) -> float:
 
 
 def checar_gate(nome: str, valor: float) -> tuple[bool, str]:
+    """Compara `valor` com o mínimo de `GATES[nome]` (>= passa). Devolve (ok, linha pronta para log).
+
+    Nome fora de `GATES` levanta `KeyError`.
+    """
     limite = GATES[nome]
     ok = valor >= limite
     return ok, f"{nome} = {valor:.3f} (limite {limite:.2f}) → {'OK' if ok else 'REPROVADO'}"

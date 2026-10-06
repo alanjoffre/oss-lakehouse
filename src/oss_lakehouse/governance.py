@@ -83,6 +83,7 @@ POLITICA_GH_EVENTS: tuple[PoliticaColuna, ...] = (
 
 
 def colunas_pessoais(politica: Sequence[PoliticaColuna]) -> list[str]:
+    """Nomes das colunas que a política marca como dado pessoal, na ordem da política."""
     return [p.coluna for p in politica if p.dado_pessoal]
 
 
@@ -281,6 +282,7 @@ def criptografar(col: str | Column, chave_hex: str | Column) -> Column:
 
 
 def descriptografar(col: str | Column, chave_hex: str | Column) -> Column:
+    """Inverso de `criptografar` (base64 → AES-GCM → STRING). Chave errada devolve NULL, não erro."""
     c = F.col(col) if isinstance(col, str) else col
     k = F.unhex(F.col(chave_hex) if isinstance(chave_hex, str) else chave_hex)
     # try_aes_decrypt: sem a chave certa devolve NULL em vez de derrubar o job.

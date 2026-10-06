@@ -71,10 +71,16 @@ def add_ingestion_metadata(df: DataFrame) -> DataFrame:
 
 
 def read_gharchive_stream(spark: SparkSession, landing_dir: str, max_files_per_trigger: int = 4) -> DataFrame:
+    """Stream de leitura dos JSON da landing, com o schema fixo do envelope (nada é inferido).
+
+    Lê até `max_files_per_trigger` arquivos por micro-lote e devolve também `_metadata` (arquivo de origem).
+    """
     return (
         spark.readStream.schema(GH_EVENT_SCHEMA)
         .option("maxFilesPerTrigger", max_files_per_trigger)
-        # Linha que não casa com o schema não derruba o job: vai para _corrupt_record.
+        # Linha que não casa com o schema não derruba o job: os campos viram NULL. O registro bruto NÃO
+        # fica guardado, porque o schema não declara `_corrupt_record` — o notebook 03 mostra o efeito
+        # e as saídas (coluna de registro corrompido, `badRecordsPath`, coluna de resgate no Auto Loader).
         .option("mode", "PERMISSIVE")
         .json(landing_dir)
         .select("*", "_metadata")

@@ -63,6 +63,11 @@ class CacheMiss(LLMError):
 
 @dataclass(frozen=True)
 class LLMRequest:
+    """Pedido já renderizado: prompt (system + user), modelo e JSON Schema da saída.
+
+    Imutável; `key()` é o SHA-256 que serve de chave do cache — `max_tokens` fica de fora da chave.
+    """
+
     prompt_id: str
     prompt_version: str
     system: str
@@ -89,6 +94,8 @@ class LLMRequest:
 
 @dataclass
 class Usage:
+    """Consumo de uma chamada, em tokens. `cost_usd` é `None` quando o provedor não informou o custo."""
+
     input_tokens: int = 0
     output_tokens: int = 0
     cost_usd: float | None = None
@@ -96,6 +103,11 @@ class Usage:
 
 @dataclass
 class LLMResponse:
+    """Resposta de um provedor. `data` é o JSON ainda NÃO validado — quem valida é `completar`.
+
+    `key` é a chave do pedido; em replay (`from_cache=True`) `latency_ms` e `usage` são os da gravação.
+    """
+
     key: str
     data: dict[str, Any]
     usage: Usage = field(default_factory=Usage)
@@ -106,6 +118,8 @@ class LLMResponse:
 
 
 class LLMClient(Protocol):
+    """Interface que o pipeline conhece: qualquer objeto com `name` e `complete(request)` serve."""
+
     name: str
 
     def complete(self, request: LLMRequest) -> LLMResponse: ...

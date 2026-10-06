@@ -136,3 +136,14 @@ def test_fixture_gravada_tem_formato_esperado():
     assert len(files) >= 10
     first = read_gz(files[0])[0]
     assert {"meta", "wiki", "bot", "type", "timestamp"} <= set(first)
+
+
+def test_estado_usa_temporario_com_sufixo_acrescentado(tmp_path):
+    # `state.json` e `state.txt` na mesma pasta não podem disputar o mesmo temporário.
+    from oss_lakehouse.sources.wikimedia import load_last_event_id, save_last_event_id
+
+    a, b = tmp_path / "state.json", tmp_path / "state.txt"
+    save_last_event_id(a, "id-a")
+    save_last_event_id(b, "id-b")
+    assert load_last_event_id(a) == "id-a" and load_last_event_id(b) == "id-b"
+    assert not list(tmp_path.glob("*.tmp"))

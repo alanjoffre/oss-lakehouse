@@ -32,6 +32,8 @@ NUMERICOS = ("int", "bigint", "smallint", "tinyint", "double", "float", "decimal
 
 
 class Regra(BaseModel):
+    """Regra de qualidade proposta pelo LLM: um dos 6 tipos de `regra`; o resto são parâmetros do tipo."""
+
     nome: str = Field(pattern=r"^[a-z0-9_]+$")
     coluna: str
     regra: Literal["not_null", "unique", "accepted_values", "regex", "range", "max_length"]
@@ -44,11 +46,13 @@ class Regra(BaseModel):
 
 
 class SugestaoRegras(BaseModel):
+    """Saída validada do prompt `gerar_regras_qualidade`: a lista de regras propostas."""
+
     regras: list[Regra]
 
 
 class RegraInvalida(ValueError):
-    pass
+    """A regra passou no pydantic mas não compila (coluna inexistente, regex inválida, range sem limite…)."""
 
 
 # --- profiling -----------------------------------------------------------------
@@ -99,6 +103,7 @@ def profiling(df: DataFrame, colunas_pessoais: Sequence[str] = (), max_top: int 
 def request_regras(
     tabela: str, contexto: str, perfil: list[dict[str, Any]], model: str = DEFAULT_MODEL
 ) -> LLMRequest:
+    """Monta o pedido do prompt `gerar_regras_qualidade` com o profiling em JSON. Não chama o LLM."""
     return carregar_prompt("gerar_regras_qualidade").request(
         model=model,
         max_tokens=6000,
@@ -111,6 +116,7 @@ def request_regras(
 def sugerir_regras(
     client: LLMClient, tabela: str, contexto: str, perfil: list[dict[str, Any]], model: str = DEFAULT_MODEL
 ) -> tuple[list[Regra], LLMResponse]:
+    """Chama o LLM e devolve as regras propostas (validadas, ainda NÃO aprovadas) + a resposta."""
     saida, resp = completar(client, request_regras(tabela, contexto, perfil, model), SugestaoRegras)
     return saida.regras, resp
 
@@ -168,6 +174,8 @@ Decisao = Literal["aprovar", "rejeitar"] | dict[str, Any]
 
 @dataclass(frozen=True)
 class Revisao:
+    """Resultado de `revisar`: as regras aprovadas e a trilha de auditoria de todas as decisões."""
+
     aprovadas: list[Regra]
     registro: list[dict[str, str]]  # trilha de auditoria: quem decidiu o quê
 

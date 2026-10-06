@@ -35,6 +35,8 @@ log = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class SSEEvent:
+    """Um evento SSE já montado: tipo (`message` por padrão), `id` (se veio) e as linhas `data:` unidas."""
+
     event: str
     id: str | None
     data: str
@@ -126,18 +128,25 @@ class MicroBatchWriter:
 
 
 def load_last_event_id(state_path: Path) -> str | None:
+    """`Last-Event-ID` salvo no arquivo de estado; `None` se o arquivo não existe (primeira execução)."""
     return json.loads(state_path.read_text()).get("last_event_id") if state_path.exists() else None
 
 
 def save_last_event_id(state_path: Path, last_id: str) -> None:
+    """Grava o estado de retomada de forma atômica (`.tmp` + `os.replace`), com o instante em UTC."""
     state_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = state_path.with_suffix(".tmp")
+    # Sufixo ACRESCENTADO (state.json.tmp), não trocado: dois estados com o mesmo nome-base não colidem.
+    tmp = state_path.with_name(state_path.name + ".tmp")
     tmp.write_text(json.dumps({"last_event_id": last_id, "saved_at": datetime.now(UTC).isoformat()}))
     os.replace(tmp, state_path)
 
 
 @dataclass
 class CaptureReport:
+    """Resumo de uma captura: eventos lidos, arquivos gravados, reconexões e os `Last-Event-ID`
+    (de onde retomou e o último já salvo no estado).
+    """
+
     events: int = 0
     files: list[Path] = field(default_factory=list)
     reconnects: int = 0

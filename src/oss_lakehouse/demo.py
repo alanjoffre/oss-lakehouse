@@ -34,6 +34,10 @@ QUERIES = {
 
 
 def run() -> None:
+    """Roda bronze → silver → gold → quality gravando cada etapa em `ops/pipeline_runs`.
+
+    Depois imprime as consultas de `QUERIES` e as execuções do `run_id`, e encerra a sessão (`spark.stop()`).
+    """
     spark = get_spark("demo")
     s = get_settings()
     sink = DeltaRunSink(spark, ops_path("pipeline_runs"))

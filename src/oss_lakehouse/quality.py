@@ -31,6 +31,8 @@ Action = Literal["warn", "drop", "fail"]
 # --------------------------------------------------------------------------- expectations
 @dataclass(frozen=True)
 class Expectation:
+    """Regra declarativa: `condition` é SQL que deve ser verdadeira na linha válida (NULL = falha)."""
+
     name: str
     condition: str  # expressão SQL que deve ser VERDADEIRA para a linha ser válida
     action: Action = "warn"
@@ -49,6 +51,8 @@ class ExpectationFailed(RuntimeError):
 
 @dataclass
 class QualityResult:
+    """Saída de `apply_expectations`: válidos e quarentena (DataFrames ainda lazy) + métricas por regra."""
+
     valid: DataFrame
     quarantine: DataFrame
     metrics: list[dict[str, object]] = field(default_factory=list)
@@ -120,6 +124,8 @@ def expectations_from_dicts(rows: list[dict[str, str]]) -> list[Expectation]:
 
 # --------------------------------------------------------------------------- contratos
 class ColumnSpec(BaseModel):
+    """Coluna declarada no contrato; `type` no formato `simpleString` do Spark."""
+
     name: str
     type: str  # tipo Spark em simpleString: bigint, string, timestamp, date, int, boolean…
     nullable: bool = True
@@ -127,11 +133,15 @@ class ColumnSpec(BaseModel):
 
 
 class Freshness(BaseModel):
+    """SLA de atualização do contrato: atraso máximo, em horas, do maior valor de `column`."""
+
     column: str
     max_delay_hours: float
 
 
 class DataContract(BaseModel):
+    """Contrato de dados (YAML): dono, grão, chave, colunas e, opcionalmente, freshness e expectations."""
+
     name: str
     version: str
     owner: str
@@ -145,11 +155,14 @@ class DataContract(BaseModel):
 
 
 def load_contract(path: str | Path) -> DataContract:
+    """Lê o YAML e valida a estrutura com pydantic; contrato malformado levanta `ValidationError`."""
     with Path(path).open(encoding="utf-8") as f:
         return DataContract.model_validate(yaml.safe_load(f))
 
 
 class ContractViolation(RuntimeError):
+    """O DataFrame não cumpre o contrato. `problems` traz a lista completa (a mensagem junta todos)."""
+
     def __init__(self, contract: str, problems: list[str]):
         self.problems = problems
         super().__init__(f"contrato '{contract}' violado: " + "; ".join(problems))
@@ -198,6 +211,11 @@ def enforce_contract(df: DataFrame, contract: DataContract, check_data: bool = T
 # --------------------------------------------------------------------------- freshness e volume
 @dataclass(frozen=True)
 class FreshnessResult:
+    """Resultado de `check_freshness`. `latest` em UTC, sem fuso.
+
+    Tabela vazia (ou coluna toda nula): `latest` e `lag_hours` ficam `None` e `ok=False`.
+    """
+
     latest: datetime | None
     lag_hours: float | None
     max_delay_hours: float

@@ -44,6 +44,7 @@ def _table_exists(spark: SparkSession, path: str) -> bool:
 
 
 def table_version(table: DeltaTable) -> int:
+    """Versão atual da tabela (a do último commit). Lida ANTES do MERGE, para `merge_metrics_since`."""
     return int(table.history(1).select("version").collect()[0][0])
 
 

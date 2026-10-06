@@ -13,6 +13,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Preco:
+    """Preço de um modelo em USD por 1 milhão de tokens (entrada e saída têm preços diferentes)."""
+
     entrada: float  # USD / 1M tokens de entrada
     saida: float  # USD / 1M tokens de saída
 
@@ -27,6 +29,10 @@ DESCONTO_BATCH = 0.5
 
 
 def custo_usd(modelo: str, tokens_entrada: int, tokens_saida: int, batch: bool = False) -> float:
+    """Custo em USD de uma chamada, pela tabela `PRECOS`; `batch=True` aplica o desconto da Batch API.
+
+    Modelo fora da tabela levanta `KeyError`.
+    """
     p = PRECOS[modelo]
     custo = (tokens_entrada * p.entrada + tokens_saida * p.saida) / 1_000_000
     return custo * (DESCONTO_BATCH if batch else 1.0)

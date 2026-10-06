@@ -110,6 +110,8 @@ class StepRun:
 
 
 class RunSink(Protocol):
+    """Destino das execuções de etapa: qualquer objeto com `write(run)` (`MemorySink`, `DeltaRunSink`…)."""
+
     def write(self, run: StepRun) -> None: ...
 
 
@@ -237,6 +239,8 @@ def tracked(
 
 @dataclass(frozen=True)
 class CheckResult:
+    """Resultado de uma checagem (freshness, volume…). `str()` dá a linha de alerta pronta para notificar."""
+
     name: str
     ok: bool
     observed: str
@@ -336,6 +340,8 @@ class ProgressCollector(StreamingQueryListener):
 
 @dataclass(frozen=True)
 class CostEstimate:
+    """Saída de `estimate_cost`: DBUs consumidos e custo de DBU e de VM, na moeda dos preços informados."""
+
     dbus: float
     dbu_cost: float
     vm_cost: float

@@ -28,11 +28,15 @@ TAMANHO_LOTE = 25
 
 
 class ItemTitulo(BaseModel):
+    """Categoria que o LLM deu ao título de índice `i` do lote."""
+
     i: int
     categoria: Categoria
 
 
 class LoteTitulos(BaseModel):
+    """Saída validada do prompt `classificar_titulos` para um lote."""
+
     itens: list[ItemTitulo]
 
 
@@ -96,12 +100,15 @@ def request_lote(itens: Sequence[tuple[int, str]], model: str = DEFAULT_MODEL) -
 
 
 def lotes(titulos: Sequence[str], tamanho: int = TAMANHO_LOTE) -> list[list[tuple[int, str]]]:
+    """Fatia os títulos em lotes de `tamanho`, cada item com o seu índice global: [(índice, título)]."""
     indexados = list(enumerate(titulos))
     return [indexados[k : k + tamanho] for k in range(0, len(indexados), tamanho)]
 
 
 @dataclass
 class Resultado:
+    """Previsões alinhadas aos títulos de entrada (`None` = sem resposta válida) + a resposta de cada lote."""
+
     previsoes: list[str | None]
     respostas: list[LLMResponse] = field(default_factory=list)
 

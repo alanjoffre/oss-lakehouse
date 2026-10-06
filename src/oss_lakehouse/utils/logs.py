@@ -15,6 +15,11 @@ _STANDARD_ATTRS = set(vars(logging.makeLogRecord({}))) | {"message", "asctime", 
 
 
 class JsonFormatter(logging.Formatter):
+    """Uma linha JSON por registro: `ts` (UTC), `level`, `logger`, `msg` + os campos passados em `extra=`.
+
+    Com exceção, inclui `exc` (traceback). Valor não serializável vira texto (`default=str`).
+    """
+
     def format(self, record: logging.LogRecord) -> str:
         doc: dict[str, object] = {
             "ts": datetime.fromtimestamp(record.created, UTC).isoformat(timespec="milliseconds"),

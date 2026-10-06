@@ -24,6 +24,11 @@ PROMPTS_DIR = Path(__file__).parent / "prompts"
 
 @dataclass(frozen=True)
 class Prompt:
+    """Prompt versionado, como está no TOML. `request(**variaveis)` preenche o `$variavel` do `user`.
+
+    Variável do template sem valor levanta `KeyError` (`Template.substitute`).
+    """
+
     id: str
     version: str
     descricao: str
@@ -45,6 +50,10 @@ class Prompt:
 
 @cache
 def carregar_prompt(nome: str) -> Prompt:
+    """Lê `prompts/<nome>.toml` e devolve o `Prompt` (o `schema` vem como texto JSON no arquivo).
+
+    Memoizado (`@cache`): editar o arquivo com o processo vivo não tem efeito.
+    """
     dados = tomllib.loads((PROMPTS_DIR / f"{nome}.toml").read_text(encoding="utf-8"))
     return Prompt(
         id=dados["id"],
@@ -57,4 +66,5 @@ def carregar_prompt(nome: str) -> Prompt:
 
 
 def listar_prompts() -> list[Prompt]:
+    """Todos os prompts de `PROMPTS_DIR`, em ordem alfabética do nome do arquivo."""
     return [carregar_prompt(p.stem) for p in sorted(PROMPTS_DIR.glob("*.toml"))]

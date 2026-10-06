@@ -37,6 +37,7 @@ CDF_COLUMNS = ("_change_type", "_commit_version", "_commit_timestamp")
 
 
 def log_dir(table_path: str) -> Path:
+    """Pasta `_delta_log` da tabela, como `Path` local (aceita o prefixo `file:`)."""
     return Path(table_path.removeprefix("file:")) / "_delta_log"
 
 
@@ -206,6 +207,7 @@ def retry_on_conflict[T](
 
 
 def latest_version(spark: SparkSession, table_path: str) -> int:
+    """Última versão commitada da tabela, via `DESCRIBE HISTORY` (passa pelo Spark, não lê o log à mão)."""
     row = spark.sql(f"DESCRIBE HISTORY delta.`{table_path}` LIMIT 1").select("version").first()
     assert row is not None
     return int(row[0])

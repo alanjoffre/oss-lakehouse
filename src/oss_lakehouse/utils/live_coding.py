@@ -22,6 +22,8 @@ from pyspark.sql import functions as F
 
 
 class SupportsLessThan(Protocol):
+    """Qualquer tipo comparável com `<` (int, str, datetime…): é só o que `merge_intervals` exige."""
+
     def __lt__(self, other: object, /) -> bool: ...
 
 
