@@ -129,6 +129,23 @@ def binario(gold: Sequence[bool], pred: Sequence[bool]) -> Binario:
     )
 
 
+def kappa_cohen(a: Sequence[Any], b: Sequence[Any]) -> float:
+    """Concordância entre dois rotuladores descontado o acaso (kappa de Cohen).
+
+    1 = concordância total; 0 = o que o acaso daria; < 0 = pior que o acaso. A acurácia sozinha
+    engana quando uma classe domina: dois rotuladores que respondem sempre a classe majoritária
+    "concordam" muito sem saber nada.
+    """
+    if len(a) != len(b) or not a:
+        raise ValueError("as duas listas precisam ter o mesmo tamanho (> 0)")
+    n = len(a)
+    observada = sum(x == y for x, y in zip(a, b, strict=True)) / n
+    esperada = sum((list(a).count(c) / n) * (list(b).count(c) / n) for c in set(a) | set(b))
+    if esperada == 1.0:  # os dois usaram uma única classe: concordância trivial
+        return 1.0
+    return (observada - esperada) / (1 - esperada)
+
+
 def checar_gate(nome: str, valor: float) -> tuple[bool, str]:
     limite = GATES[nome]
     ok = valor >= limite

@@ -93,7 +93,7 @@ src/oss_lakehouse/  o pacote: bronze, silver, scd2, gold, quality, streaming, go
                     observability, perf, delta_log, ai/, sources/, pipeline, cli
 tests/              testes unitários e de integração (pytest + chispa), sem rede
 contracts/          contratos de dados em YAML
-evals/              gabaritos rotulados para avaliar as etapas com LLM
+evals/              gabaritos para avaliar as etapas com LLM + planilhas de revisão humana às cegas
 infra/              Terraform da Azure e Azurite (emulador do Azure Storage)
 resources/          job do Databricks (bronze → silver → gold → quality)
 docs/               ADRs, contratos das tabelas, guia de estilo dos notebooks
@@ -106,7 +106,7 @@ Este repositório é um **laboratório de estudo e demonstração**, e é honest
 - **Roda de verdade, local:** tudo o que está marcado 🧪 — Spark, Delta Lake, streaming, MERGE, SCD2, qualidade, performance, testes. Todo número citado num notebook saiu de uma célula executada.
 - **Código pronto, não implantado:** o Terraform da Azure passa em `terraform validate`, e o bundle do Databricks é validado contra o schema oficial — mas nenhum dos dois foi aplicado numa conta real. Recursos exclusivos da plataforma (Auto Loader, Unity Catalog, Photon, system tables, `ai_query`) aparecem marcados ☁️, como código não executado.
 - **Medições de tempo:** feitas num laptop; valem pela ordem de grandeza e pelo plano de execução, não pelo valor absoluto.
-- **IA:** as respostas do modelo foram gravadas uma vez e são reproduzidas do cache (offline e determinístico). Os gabaritos de avaliação são pequenos e foram rotulados com apoio de assistente de IA — o notebook 12 discute o que isso significa para os números.
+- **IA:** as respostas do modelo foram gravadas uma vez e são reproduzidas do cache (offline e determinístico). Os gabaritos de avaliação são pequenos e foram rotulados com apoio de assistente de IA — o notebook 12 discute o que isso significa para os números, e `evals/revisao_humana/` traz o passo que falta: rotulagem humana às cegas com medida de concordância (kappa de Cohen).
 
 ## Sobre os dados
 

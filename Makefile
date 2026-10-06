@@ -2,7 +2,7 @@ SHELL := /bin/bash
 SPARK := scripts/spark_slot.sh
 export SPARK_LOCAL_IP ?= 127.0.0.1
 
-.PHONY: help setup data bronze test lint notebooks nb guia demo build bundle-validate precommit tf-validate azurite-up azurite-down clean-lake
+.PHONY: help setup data bronze test lint notebooks nb guia revisao-medir demo build bundle-validate precommit tf-validate azurite-up azurite-down clean-lake
 
 help: ## Lista os comandos
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -30,6 +30,9 @@ nb: ## Gera e executa um notebook: make nb N=05
 
 guia: ## Regenera o GUIA_DE_ESTUDO.md a partir dos notebooks
 	uv run python scripts/build_guia.py
+
+revisao-medir: ## Mede a concordância da revisão humana dos gabaritos de IA
+	uv run python scripts/revisao_gabarito.py medir
 
 build: ## Gera o wheel do pacote (o artefato que o job do Databricks instala)
 	uv build --wheel

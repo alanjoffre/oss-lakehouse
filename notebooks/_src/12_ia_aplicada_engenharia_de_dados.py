@@ -374,7 +374,9 @@ for linha in sql_tags_uc("main.crm.clientes", politica)[:4]:
 # 2. **Rotulador e modelo são da mesma família.** Um assistente de IA ajudou a rotular e um modelo da mesma
 #    família é avaliado: os dois tendem a errar parecido, o que **infla** a concordância. O número é "concordância
 #    com um rotulador mais forte", não verdade absoluta. O remédio é rótulo humano independente (dois rotuladores
-#    e medir a concordância entre eles).
+#    e medir a concordância entre eles). O repositório deixa esse passo pronto: `evals/revisao_humana/` tem as
+#    planilhas **às cegas** (sem o gabarito nem a resposta do modelo) e `make revisao-medir` calcula a
+#    concordância e o kappa de Cohen.
 # 3. **Rótulo único para título ambíguo.** 20 dos 120 estão marcados como ambíguos; a acurácia é reportada com e
 #    sem eles.
 
