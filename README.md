@@ -23,9 +23,9 @@ evidência — plano de execução, contagem, antes e depois — e termina com p
 | | |
 |---|---|
 | **O que é** | Um pipeline *medallion* (bronze → silver → gold) em PySpark e Delta Lake, com o mesmo código rodando local e no Databricks |
-| **Com que dado** | ~279 mil eventos reais do GitHub em 3 horas (2,2 milhões no dia usado no estudo de performance), 16 tipos de evento, JSON semiestruturado |
+| **Com que dado** | ~279 mil eventos reais do GitHub em 3 horas (2,07 milhões no dia inteiro, usado no estudo de performance), 16 tipos de evento, JSON semiestruturado |
 | **O que entrega** | 18 notebooks executados (387 células de código, nenhuma com erro), um pacote com ~6 mil linhas e uma suíte com mais de 180 testes |
-| **Como se prova** | Todo número citado saiu de uma célula executada; o CI roda lint, testes e validação do Terraform a cada push |
+| **Como se prova** | Os resultados citados saem de células executadas e versionadas; o CI roda lint, testes e validação do Terraform a cada push |
 | **O que não é** | Não está implantado em nuvem: a infraestrutura da Azure e o job do Databricks estão como código validado, não aplicado — ver [Limites declarados](#limites-declarados) |
 
 **Para avaliar em 10 minutos:** [arquitetura e decisões](notebooks/00_mapa_de_competencias_e_arquitetura.ipynb) →
@@ -198,7 +198,7 @@ Este repositório é um **laboratório de estudo e demonstração**. O que ele p
 - **Código pronto, não implantado:** o Terraform da Azure passa em `terraform validate` e o bundle do Databricks é
   validado contra o schema oficial, mas nenhum dos dois foi aplicado numa conta. Recursos exclusivos da plataforma
   (Auto Loader, Unity Catalog, Photon, system tables, `ai_query`) aparecem marcados ☁️, como código não executado.
-- **Escala:** o maior conjunto usado tem 2,2 milhões de linhas. Serve para mostrar o mecanismo (plano, skew, shuffle);
+- **Escala:** o maior conjunto usado tem 2,07 milhões de linhas. Serve para mostrar o mecanismo (plano, skew, shuffle);
   não substitui um teste de carga.
 - **Medições de tempo:** feitas num laptop; valem pela ordem de grandeza e pelo plano de execução, não pelo valor
   absoluto.
