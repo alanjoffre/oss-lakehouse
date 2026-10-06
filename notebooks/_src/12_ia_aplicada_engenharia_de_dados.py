@@ -536,7 +536,7 @@ for modelo in PRECOS:
 #   cada resposta), com o raciocínio desligado ou no mínimo — classificação curta não precisa dele. Sem chave de
 #   API nesta máquina, eu **não** tenho essa medida; por isso mostro a faixa em vez de um número.
 # - A ordem de grandeza já decide: no modelo leve, 1 milhão de títulos fica entre ~US$ 85 (piso) e ~US$ 740
-#   (teto); a Batch API corta pela metade. Nos modelos maiores a mesma conta dobra e quadruplica. Classificar os ~2,2 milhões de eventos **por dia** do
+#   (teto); a Batch API corta pela metade. Nos modelos maiores a mesma conta dobra e quadruplica. Classificar os ~2 milhões de eventos **por dia** do
 #   GH Archive com modelo grande não fecha a conta; classificar só issue/PR novos com o modelo leve, em lote e
 #   com cascata (§6), fecha.
 # - **Tokenizadores diferem entre gerações de modelo**: o mesmo texto vira mais tokens nos modelos novos. Por
