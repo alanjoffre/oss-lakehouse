@@ -1,18 +1,51 @@
 # oss-lakehouse
 
-Um lakehouse completo sobre dados públicos do ecossistema open source — **PySpark, Delta Lake, Databricks, Azure e IA aplicada à engenharia de dados** — construído como trilha de 18 notebooks executados, apoiados num pacote Python testado.
+[![ci](https://github.com/alanjoffre/oss-lakehouse/actions/workflows/ci.yml/badge.svg)](https://github.com/alanjoffre/oss-lakehouse/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Apache Spark](https://img.shields.io/badge/Spark-4.2-E25A1C?logo=apachespark&logoColor=white)
+![Delta Lake](https://img.shields.io/badge/Delta_Lake-4.4-003366)
+![Databricks](https://img.shields.io/badge/Databricks-bundle_validado-FF3621?logo=databricks&logoColor=white)
+![Azure](https://img.shields.io/badge/Azure-Terraform-0078D4)
+[![Licença: MIT](https://img.shields.io/badge/licença-MIT-22c55e)](LICENSE)
 
-Cada notebook explica **o que é, por que existe, como funciona e quando não usar**, mostra o código rodando com a evidência (plano de execução, contagem, antes/depois) e fecha com perguntas de entrevista respondidas.
+Um lakehouse completo sobre **dados públicos reais** — os eventos do GitHub e as edições da Wikipedia —, construído como
+uma trilha de **18 notebooks executados** apoiados num **pacote Python testado**. Cobre o trabalho de engenharia de dados
+de ponta a ponta: ingestão incremental, MERGE e SCD2, streaming, modelagem dimensional, qualidade, performance no Spark,
+Delta Lake por dentro, governança e LGPD, IA dentro do pipeline, CI/CD e infraestrutura na Azure.
 
-> **Por onde começar:** [`00 · Mapa de competências e arquitetura`](notebooks/00_mapa_de_competencias_e_arquitetura.ipynb) · [`GUIA_DE_ESTUDO.md`](GUIA_DE_ESTUDO.md) (199 perguntas com resposta, por tema)
+Cada notebook explica **o que é, por que existe, como funciona e quando não usar**, mostra o código rodando com a
+evidência — plano de execução, contagem, antes e depois — e termina com perguntas respondidas.
 
-## Os dados
+---
 
-| Fonte | O que é | O que exercita |
+## Em um minuto
+
+| | |
+|---|---|
+| **O que é** | Um pipeline *medallion* (bronze → silver → gold) em PySpark e Delta Lake, com o mesmo código rodando local e no Databricks |
+| **Com que dado** | ~279 mil eventos reais do GitHub em 3 horas (2,2 milhões no dia usado no estudo de performance), 16 tipos de evento, JSON semiestruturado |
+| **O que entrega** | 18 notebooks executados (387 células de código, nenhuma com erro), um pacote com ~6 mil linhas e uma suíte com mais de 180 testes |
+| **Como se prova** | Todo número citado saiu de uma célula executada; o CI roda lint, testes e validação do Terraform a cada push |
+| **O que não é** | Não está implantado em nuvem: a infraestrutura da Azure e o job do Databricks estão como código validado, não aplicado — ver [Limites declarados](#limites-declarados) |
+
+**Para avaliar em 10 minutos:** [arquitetura e decisões](notebooks/00_mapa_de_competencias_e_arquitetura.ipynb) →
+[MERGE e SCD2](notebooks/05_bronze_silver_merge_scd2.ipynb) → [performance](notebooks/09_performance_spark.ipynb) →
+[IA no pipeline](notebooks/12_ia_aplicada_engenharia_de_dados.ipynb) → [`src/oss_lakehouse/`](src/oss_lakehouse/) e
+[`tests/`](tests/).
+
+## O que os dados reais mostraram
+
+Achados que só aparecem executando — cada um está num notebook, com a célula que o prova:
+
+| Achado | Evidência | Onde |
 |---|---|---|
-| [GH Archive](https://www.gharchive.org/) | Todos os eventos públicos do GitHub, um JSON.gz por hora (~92 mil eventos/hora, 16 tipos, `payload` diferente por tipo) | Ingestão incremental de arquivos, schema semiestruturado, volume, skew real (um bot gera ~11% dos eventos) |
-| API REST do GitHub | Metadados de repositórios | Paginação, rate limit, ETag, retry, marca d'água |
-| [Wikimedia EventStreams](https://stream.wikimedia.org/) | Edições da Wikipedia em tempo real | Structured Streaming, watermark, janelas, exactly-once |
+| **Skew real, não sintético** | Um único bot gera 12,7% dos eventos; num join por ator, a maior task recebe 25,5× os registros da mediana. Com *salting*, 3,2× | [09 §5](notebooks/09_performance_spark.ipynb) |
+| **O custo escondido do MERGE** | Atualizar 3 linhas copia dezenas de milhares sem *deletion vectors* — e nenhuma com eles | [05 §4](notebooks/05_bronze_silver_merge_scd2.ipynb) |
+| **Idempotência quebrada por `NULL`** | Um evento real sem repositório era reinserido a cada carga da SCD2: `NULL = NULL` não casa no MERGE | [05 §7](notebooks/05_bronze_silver_merge_scd2.ipynb) |
+| **Conflito de escrita reproduzido** | Dois escritores concorrentes geram `ConcurrentAppendException`; com a partição na condição, os dois gravam | [10 §3](notebooks/10_delta_lake_por_dentro.ipynb) |
+| **Hash não anonimiza** | Um ataque de dicionário reidentifica 60,2% dos eventos em segundos; com HMAC e chave, nenhum | [11 §5](notebooks/11_governanca_unity_catalog_lgpd.ipynb) |
+| **Dependência muda o plano físico** | Instalar `pyarrow` troca sozinho o caminho de execução de uma UDF no Spark 4.2 — e o job travou sem mudar uma linha de código | [09 §11](notebooks/09_performance_spark.ipynb) |
+| **Quando não usar LLM** | Na classificação de títulos, o modelo acerta 87,5% contra 69,2% de palavras-chave; uma regra simples resolve 36% dos casos sem chamar o modelo | [12](notebooks/12_ia_aplicada_engenharia_de_dados.ipynb) |
 
 ## Arquitetura
 
@@ -23,7 +56,7 @@ flowchart LR
     B[API do GitHub]
     C[Wikimedia<br/>stream]
   end
-  subgraph Lakehouse["Lakehouse — Delta Lake (local: pastas · Azure: ADLS Gen2 + Unity Catalog)"]
+  subgraph Lakehouse["Lakehouse em Delta Lake"]
     L[(landing)] --> BR[(bronze<br/>cópia fiel + linhagem)]
     BR --> S[(silver<br/>tipada, deduplicada,<br/>MERGE, SCD2)]
     S --> G[(gold<br/>star schema)]
@@ -34,15 +67,27 @@ flowchart LR
   C --> L
   G --> BI[SQL / BI]
   S --> IA[IA no pipeline<br/>PII, classificação,<br/>regras, documentação]
-  subgraph Plataforma
-    O[Orquestração<br/>Lakeflow Jobs]
-    CI[CI/CD<br/>Git + Bundles]
-    T[Terraform<br/>Azure]
-    OB[Observabilidade<br/>e custo]
-  end
 ```
 
-O mesmo código roda **local** (Spark 4.2 + Delta 4.4, pastas em `data/`) e no **Databricks/Azure** (o que muda é a raiz dos caminhos e a sessão). As decisões estão registradas como ADRs em [`docs/adr/`](docs/adr/).
+| Camada | Local (este repositório) | Databricks na Azure (alvo) |
+|---|---|---|
+| Armazenamento | pastas em `data/` | ADLS Gen2, com identidade gerenciada |
+| Tabelas | Delta Lake 4.4 por caminho | Delta sob Unity Catalog |
+| Processamento | Spark 4.2 `local[4]` | job cluster / serverless |
+| Ingestão de arquivos | *file source* com checkpoint | Auto Loader |
+| Orquestração | `make demo` | Lakeflow Jobs, publicado por bundle |
+| Infraestrutura | Azurite (emulador) | Terraform — [`infra/terraform/azure`](infra/terraform/azure) |
+
+O que muda entre os dois ambientes é a raiz dos caminhos e a sessão — nunca o código do pipeline
+([ADR 0005](docs/adr/0005-local-first-paridade-databricks.md)).
+
+### Os dados
+
+| Fonte | O que é | O que exercita |
+|---|---|---|
+| [GH Archive](https://www.gharchive.org/) | Todos os eventos públicos do GitHub, um JSON.gz por hora (~92 mil eventos/hora, `payload` diferente por tipo) | Ingestão incremental de arquivos, schema semiestruturado, volume, skew |
+| API REST do GitHub | Metadados de repositórios | Paginação, rate limit, ETag, retry, marca d'água |
+| [Wikimedia EventStreams](https://stream.wikimedia.org/) | Edições da Wikipedia em tempo real | Structured Streaming, watermark, janelas, garantias de entrega |
 
 ## A trilha
 
@@ -69,6 +114,36 @@ O mesmo código roda **local** (Spark 4.2 + Delta 4.4, pastas em `data/`) e no *
 
 Legenda usada nos notebooks: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui).
 
+O [`GUIA_DE_ESTUDO.md`](GUIA_DE_ESTUDO.md) reúne as 199 perguntas dos notebooks, com a resposta curta e o link para a
+demonstração.
+
+## Engenharia do repositório
+
+O que sustenta os notebooks — e o que se olha primeiro ao avaliar um projeto de dados:
+
+| Prática | Como está feito aqui |
+|---|---|
+| **Lógica fora do notebook** | Transformações em [`src/oss_lakehouse/`](src/oss_lakehouse/); o notebook chama e explica. O mesmo código atende o `make demo`, os testes e as tarefas do job |
+| **Testes** | Unitários e de integração com Spark local (pytest + chispa), sem rede: [`tests/`](tests/). Inclui um teste de ponta a ponta que roda o pipeline duas vezes e exige o mesmo resultado |
+| **Idempotência** | Toda etapa pode ser reexecutada: checkpoint na ingestão, MERGE por chave, atualização condicionada a hash |
+| **Contrato de dados** | Schema, chave, grão e regras em [`contracts/`](contracts/), validados contra a tabela real; linha reprovada vai para quarentena com o motivo |
+| **Reprodutibilidade** | Notebooks versionados em `.py` (diff legível) e gerados/executados por script; dependências travadas em `uv.lock` |
+| **CI** | A cada push: `ruff`, a suíte de testes com Java 17, `terraform fmt`/`validate` — [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| **Decisões registradas** | Seis ADRs com contexto, alternativas e consequências — [`docs/adr/`](docs/adr/) |
+| **IA com avaliação** | Respostas do modelo gravadas (execução offline e determinística), gabaritos em [`evals/`](evals/), gate de acurácia nos testes e revisão humana às cegas com kappa de Cohen |
+| **Segredos** | Nenhum no repositório; configuração por variável de ambiente (`OSSLH_*`) |
+
+### Decisões de arquitetura
+
+| ADR | Decisão |
+|---|---|
+| [0001](docs/adr/0001-lakehouse-medallion.md) | Lakehouse com arquitetura Medallion |
+| [0002](docs/adr/0002-delta-lake.md) | Delta Lake como formato de tabela |
+| [0003](docs/adr/0003-payload-bruto-na-bronze.md) | `payload` como JSON bruto na bronze |
+| [0004](docs/adr/0004-orquestracao.md) | Orquestração com Lakeflow Jobs |
+| [0005](docs/adr/0005-local-first-paridade-databricks.md) | Desenvolvimento local-first com paridade Databricks |
+| [0006](docs/adr/0006-ia-com-avaliacao-e-humano.md) | IA no pipeline só com avaliação e humano no circuito |
+
 ## Como rodar
 
 Pré-requisitos: Java 17, [uv](https://docs.astral.sh/uv/) e `make`. Docker e Terraform só para o notebook 14.
@@ -76,38 +151,69 @@ Pré-requisitos: Java 17, [uv](https://docs.astral.sh/uv/) e `make`. Docker e Te
 ```bash
 make setup      # instala as dependências
 make data       # baixa um dia do GH Archive (~470 MB) — o único passo que precisa de internet
-make demo       # bronze → silver → gold → quality + consultas de negócio
+make demo       # bronze → silver → gold → qualidade, com consultas de negócio no fim (~2 min)
 make test       # suíte de testes (Spark local)
 make nb N=05    # gera e executa um notebook
-make guia       # regenera o GUIA_DE_ESTUDO.md a partir dos notebooks
 ```
 
-`make help` lista todos os comandos.
+`make help` lista todos os comandos. Saída do `make demo` (os tempos variam com a máquina):
+
+```text
+== pipeline oss_lakehouse_demo ==
+  bronze     24.7s  278981
+  silver     38.8s  {'gh_events': 278981, 'dim_repo_scd2': 136949}
+  gold       28.8s  {'dim_date': 365, 'dim_actor': 97239, 'dim_repo': 136950, 'fct_events': 278981, ...}
+  quality     7.3s  {'quarentena': 0}
+```
+
+Rodar de novo devolve as mesmas contagens: o pipeline é idempotente.
 
 ## Estrutura
 
 ```text
-notebooks/_src/     fonte dos notebooks em .py (jupytext) — diff legível e code review
+notebooks/_src/     fonte dos notebooks em .py (jupytext) — é o que se revisa
 notebooks/          .ipynb gerados e executados (as saídas são versionadas de propósito)
 src/oss_lakehouse/  o pacote: bronze, silver, scd2, gold, quality, streaming, governance,
                     observability, perf, delta_log, ai/, sources/, pipeline, cli
-tests/              testes unitários e de integração (pytest + chispa), sem rede
+tests/              testes unitários e de integração, sem rede
 contracts/          contratos de dados em YAML
-evals/              gabaritos para avaliar as etapas com LLM + planilhas de revisão humana às cegas
+evals/              gabaritos das etapas com LLM e revisão humana às cegas
 infra/              Terraform da Azure e Azurite (emulador do Azure Storage)
-resources/          job do Databricks (bronze → silver → gold → quality)
+resources/          job do Databricks (bronze → silver → gold → qualidade)
 docs/               ADRs, contratos das tabelas, guia de estilo dos notebooks
+scripts/            build dos notebooks e do guia, controle de concorrência do Spark local
 ```
 
-## O que é laboratório e o que não é
+Documentação complementar: [contratos das tabelas](docs/contratos_de_tabelas.md) ·
+[guia de estilo dos notebooks](docs/guia_de_estilo_notebooks.md) · [trilha](docs/plano_notebooks.md) ·
+[ADRs](docs/adr/README.md).
 
-Este repositório é um **laboratório de estudo e demonstração**, e é honesto sobre os limites:
+## Limites declarados
 
-- **Roda de verdade, local:** tudo o que está marcado 🧪 — Spark, Delta Lake, streaming, MERGE, SCD2, qualidade, performance, testes. Todo número citado num notebook saiu de uma célula executada.
-- **Código pronto, não implantado:** o Terraform da Azure passa em `terraform validate`, e o bundle do Databricks é validado contra o schema oficial — mas nenhum dos dois foi aplicado numa conta real. Recursos exclusivos da plataforma (Auto Loader, Unity Catalog, Photon, system tables, `ai_query`) aparecem marcados ☁️, como código não executado.
-- **Medições de tempo:** feitas num laptop; valem pela ordem de grandeza e pelo plano de execução, não pelo valor absoluto.
-- **IA:** as respostas do modelo foram gravadas uma vez e são reproduzidas do cache (offline e determinístico). Os gabaritos de avaliação são pequenos e foram rotulados com apoio de assistente de IA — o notebook 12 discute o que isso significa para os números, e `evals/revisao_humana/` traz o passo que falta: rotulagem humana às cegas com medida de concordância (kappa de Cohen).
+Este repositório é um **laboratório de estudo e demonstração**. O que ele prova e o que não prova:
+
+- **Roda de verdade, local:** tudo o que está marcado 🧪 — Spark, Delta Lake, streaming, MERGE, SCD2, qualidade,
+  performance, testes.
+- **Código pronto, não implantado:** o Terraform da Azure passa em `terraform validate` e o bundle do Databricks é
+  validado contra o schema oficial, mas nenhum dos dois foi aplicado numa conta. Recursos exclusivos da plataforma
+  (Auto Loader, Unity Catalog, Photon, system tables, `ai_query`) aparecem marcados ☁️, como código não executado.
+- **Escala:** o maior conjunto usado tem 2,2 milhões de linhas. Serve para mostrar o mecanismo (plano, skew, shuffle);
+  não substitui um teste de carga.
+- **Medições de tempo:** feitas num laptop; valem pela ordem de grandeza e pelo plano de execução, não pelo valor
+  absoluto.
+- **IA:** as respostas do modelo foram gravadas uma vez e são reproduzidas do cache. Os gabaritos são pequenos e foram
+  propostos por um assistente de IA — o notebook 12 discute o que isso faz com os números, e
+  [`evals/revisao_humana/`](evals/revisao_humana/) traz o passo que valida: rotulagem humana às cegas com medida de
+  concordância.
+- **Autoria:** o projeto foi desenvolvido com apoio de assistente de IA (visível no histórico de commits). As
+  decisões, a revisão e a responsabilidade pelo conteúdo são do autor.
 
 ## Sobre os dados
 
-GH Archive, API do GitHub e Wikimedia EventStreams são fontes públicas (confira os termos de uso de cada uma antes de redistribuir). Os logins que aparecem são públicos, mas continuam sendo dado pessoal — o notebook 11 trata disso.
+GH Archive, API do GitHub e Wikimedia EventStreams são fontes públicas; confira os termos de uso de cada uma antes de
+redistribuir. Os logins que aparecem são públicos, mas continuam sendo dado pessoal — o notebook 11 trata disso.
+
+## Licença e autor
+
+Código sob licença [MIT](LICENSE). **Alan Joffre** · [github.com/alanjoffre](https://github.com/alanjoffre) ·
+[linkedin.com/in/alanjoffre](https://linkedin.com/in/alanjoffre)

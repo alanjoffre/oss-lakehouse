@@ -3,6 +3,8 @@ name = "oss-lakehouse"
 version = "0.1.0"
 description = "Lakehouse do ecossistema open source: PySpark, Delta Lake, Databricks, Azure e IA aplicada à engenharia de dados"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "alanjoffre", email = "104494637+alanjoffre@users.noreply.github.com" }
 ]
@@ -14,6 +16,9 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "requests>=2.34.2",
 ]
+
+[project.urls]
+Repository = "https://github.com/alanjoffre/oss-lakehouse"
 
 [project.scripts]
 oss-lakehouse = "oss_lakehouse.cli:main"
