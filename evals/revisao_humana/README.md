@@ -1,6 +1,6 @@
 # Revisão humana dos gabaritos, às cegas
 
-Os gabaritos em `evals/` foram propostos por um assistente de IA. Um modelo da mesma família é o avaliado, então
+Os gabaritos em `evals/` foram propostos por um modelo de linguagem. Um modelo da mesma família é o avaliado, então
 a acurácia medida contra eles tende a sair **inflada** — os dois erram parecido. O remédio é um segundo rotulador
 independente, humano, e uma medida de concordância entre os dois.
 

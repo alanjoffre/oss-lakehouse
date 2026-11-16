@@ -1240,7 +1240,7 @@ modelo, versão do prompt e chave por linha, então sei exatamente o que gerou c
 
 Gabarito rotulado, baseline simples e métrica com intervalo de confiança. No caso dos títulos: 120 exemplos,
 LLM contra palavras-chave, matriz de confusão e recortes por dificuldade. E digo as limitações: amostra pequena
-e rótulo feito com apoio de IA medem concordância, não verdade (§4).
+e rótulo proposto por modelo de linguagem medem concordância, não verdade (§4).
 
 </details>
 

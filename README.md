@@ -203,16 +203,15 @@ Este repositório é um **laboratório de estudo e demonstração**. O que ele p
 - **Medições de tempo:** feitas num laptop; valem pela ordem de grandeza e pelo plano de execução, não pelo valor
   absoluto.
 - **IA:** as respostas do modelo foram gravadas uma vez e são reproduzidas do cache. Os gabaritos são pequenos e foram
-  propostos por um assistente de IA — o notebook 12 discute o que isso faz com os números, e
+  propostos por um modelo de linguagem — o notebook 12 discute o que isso faz com os números, e
   [`evals/revisao_humana/`](evals/revisao_humana/) traz o passo que valida: rotulagem humana às cegas com medida de
   concordância.
-- **Autoria:** o projeto foi desenvolvido com apoio de assistente de IA (visível no histórico de commits). As
-  decisões, a revisão e a responsabilidade pelo conteúdo são do autor.
 
 ## Sobre os dados
 
 GH Archive, API do GitHub e Wikimedia EventStreams são fontes públicas; confira os termos de uso de cada uma antes de
-redistribuir. Os logins que aparecem são públicos, mas continuam sendo dado pessoal — o notebook 11 trata disso.
+redistribuir. Os logins que aparecem são públicos, mas continuam sendo dado pessoal — o notebook 11 trata disso. Sem código, dado nem regra de
+empregador ou cliente.
 
 ## Licença e autor
 
