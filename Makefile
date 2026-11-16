@@ -28,7 +28,7 @@ notebooks: ## Gera e executa todos os notebooks
 nb: ## Gera e executa um notebook: make nb N=05
 	$(SPARK) uv run python scripts/build_notebooks.py $(N)
 
-guia: ## Regenera o GUIA_DE_ESTUDO.md a partir dos notebooks
+guia: ## Regenera o guia de perguntas técnicas (GUIA_TECNICO.md) a partir dos notebooks
 	uv run python scripts/build_guia.py
 
 diagramas: ## Regenera docs/diagramas.md (Mermaid dos notebooks, renderizado pelo GitHub)
@@ -46,7 +46,7 @@ bundle-validate: ## Valida o bundle do Databricks (precisa de workspace configur
 precommit: ## Roda os hooks de pre-commit em todos os arquivos
 	uvx pre-commit run --all-files
 
-demo: data ## Demo de ponta a ponta para entrevista (offline depois do make data)
+demo: data ## Demo de ponta a ponta (offline depois do make data)
 	$(SPARK) uv run python -m oss_lakehouse.cli demo
 
 tf-validate: ## Valida o Terraform da Azure sem credenciais

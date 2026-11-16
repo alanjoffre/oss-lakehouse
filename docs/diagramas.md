@@ -2,9 +2,9 @@
 
 > Gerado por `scripts/build_diagramas.py` a partir dos notebooks. O visualizador de notebooks do GitHub não renderiza Mermaid; esta página, sim. Não editar à mão.
 
-## 00 · Mapa de competências e arquitetura
+## 00 · Mapa da arquitetura e das capacidades
 
-Notebook: [`00_mapa_de_competencias_e_arquitetura.ipynb`](../notebooks/00_mapa_de_competencias_e_arquitetura.ipynb)
+Notebook: [`00_mapa_da_arquitetura.ipynb`](../notebooks/00_mapa_da_arquitetura.ipynb)
 
 <a id="nb00-1"></a>
 
@@ -165,9 +165,9 @@ flowchart LR
     L & T & TF & BV --> DP{"tag v*?"} -->|sim| APR["aprovação<br/>ambiente prod"] --> PROD["deploy prod"]
 ```
 
-## 17 · Simulado de system design e troubleshooting
+## 17 · Casos de system design e troubleshooting
 
-Notebook: [`17_simulado_system_design.ipynb`](../notebooks/17_simulado_system_design.ipynb)
+Notebook: [`17_casos_system_design.ipynb`](../notebooks/17_casos_system_design.ipynb)
 
 <a id="nb17-1"></a>
 

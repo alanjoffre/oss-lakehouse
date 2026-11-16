@@ -2,7 +2,7 @@
 
 | # | Notebook (arquivo em `notebooks/_src/`) | Tema |
 |---|---|---|
-| 00 | `00_mapa_de_competencias_e_arquitetura.py` | Competências → onde cada uma aparece; arquitetura Lakehouse/Medallion na Azure; ADRs |
+| 00 | `00_mapa_da_arquitetura.py` | Capacidades → onde cada uma aparece; arquitetura Lakehouse/Medallion na Azure; ADRs |
 | 01 | `01_ambiente_local_databricks_azure.py` | Spark+Delta local, Databricks Free Edition, Azure; o que muda entre eles |
 | 02 | `02_python_avancado.py` | Python para engenharia de dados: typing, generators, decorators, context managers, dataclasses/pydantic, pytest |
 | 03 | `03_ingestao_arquivos_auto_loader.py` | Ingestão incremental de arquivos (GH Archive): Auto Loader, checkpoint, schema evolution, rescued data, backfill |
@@ -18,5 +18,5 @@
 | 13 | `13_cicd_git_asset_bundles.py` | Git (branching, PR, versionamento), Declarative Automation Bundles (ex-Databricks Asset Bundles), GitHub Actions, ambientes |
 | 14 | `14_azure_terraform_azurite.py` | ADLS Gen2, Access Connector, Key Vault, Azure Databricks via Terraform; Azurite local |
 | 15 | `15_observabilidade_e_custo.py` | Métricas de pipeline, system tables, alertas, FinOps |
-| 16 | `16_live_coding_sql_pyspark.py` | Exercícios clássicos de entrevista em SQL e PySpark |
-| 17 | `17_simulado_system_design.py` | System design de pipeline + troubleshooting (job lento, OOM, duplicatas, small files) |
+| 16 | `16_exercicios_sql_pyspark.py` | Exercícios clássicos em SQL e PySpark, resolvidos e testados |
+| 17 | `17_casos_system_design.py` | System design de pipeline + troubleshooting (job lento, OOM, duplicatas, small files) |

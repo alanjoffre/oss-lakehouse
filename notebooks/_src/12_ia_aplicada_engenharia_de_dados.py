@@ -13,7 +13,7 @@
 # > com contrato de saída, gabarito, custo medido, cache, guardrails e um humano aprovando o que muda produção —
 # > e mostra, com número, onde uma regra simples resolve melhor que o modelo.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | IA aplicada à engenharia de dados | §3 PII · §4 classificação · §9 regras de qualidade · §10 documentação · §11 triagem de falha |
 # | Arquitetura e desenvolvimento de pipelines | §1 (LLM atrás de interface, cache por hash) · §8 (inferência em lote, rate limit, idempotência) |
@@ -125,12 +125,12 @@ cmd = ClaudeCLIClient(binary="claude").comando(r1)
 print(" ".join(c if len(c) < 30 else c[:27].replace("\n", " ") + "…" for c in cmd))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Trato o LLM como uma dependência externa cara e não determinística. Ele fica atrás
+# > **Em resumo:** Trato o LLM como uma dependência externa cara e não determinística. Ele fica atrás
 # > de uma interface, a saída tem schema e é validada com pydantic, o prompt é versionado no Git e toda chamada
 # > passa por um cache cuja chave é o hash do pedido. Com isso reprocessar é de graça, o teste roda sem rede e eu
-# > consigo trocar de provedor ou de modelo sem tocar no pipeline."
+# > consigo trocar de provedor ou de modelo sem tocar no pipeline.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que não `temperature=0` para ter determinismo?** Porque não garante (o provedor não promete saída
 #   idêntica) e, nos modelos mais novos da Anthropic, os parâmetros de amostragem nem são aceitos. Determinismo de
@@ -176,10 +176,10 @@ for v in ["octocat", "Ana.Silva99@example.com", "123.456.789-09", "(11) 98765-43
 print(limpar_texto_livre("Login falha para ana@example.com no IP 192.0.2.7 — cc @octocat"))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Antes de qualquer chamada eu reduzo o dado ao mínimo que a tarefa precisa. Para
+# > **Em resumo:** Antes de qualquer chamada eu reduzo o dado ao mínimo que a tarefa precisa. Para
 # > classificar coluna, o modelo vê nome, tipo e amostras com máscara de formato — ele reconhece `999.999.999-99`
 # > como CPF sem ver nenhum CPF. Para texto livre, removo os padrões conhecidos por regex e deixo claro que isso é
-# > rede de proteção, não garantia."
+# > rede de proteção, não garantia.
 #
 # **Trade-offs / quando NÃO usar**
 # - A máscara tira informação: `tipo_sanguineo` vira `X+` e `cidade` vira `Xxxxxx`. O modelo passa a depender do
@@ -220,7 +220,7 @@ for pf in perfis_c[1:5]:
 # %% [markdown]
 # **O gabarito.** `evals/pii_colunas_gold.jsonl` tem uma linha por coluna com o rótulo esperado (`pii`) e uma
 # marca `ambiguo` para os casos em que duas pessoas razoáveis discordariam (ex.: `repo_name` — o dono do
-# repositório pode ser pessoa física). Foi rotulado **pelo autor com apoio de assistente de IA**, seguindo a
+# repositório pode ser pessoa física). Os rótulos foram **propostos por um modelo de linguagem**, seguindo a
 # política de classificação do notebook 11 — vale a mesma ressalva do §4: mede concordância com essa política,
 # não uma verdade externa. Ele também guarda o perfil mascarado que foi enviado; a célula confere que
 # o perfil calculado agora é idêntico ao congelado (senão a avaliação estaria comparando coisas diferentes).
@@ -321,12 +321,12 @@ for linha in sql_tags_uc("main.crm.clientes", politica)[:4]:
     print(linha)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Uso o LLM para propor a classificação de PII por coluna a partir de nome, tipo e
+# > **Em resumo:** Uso o LLM para propor a classificação de PII por coluna a partir de nome, tipo e
 # > amostras mascaradas — ele nunca vê o valor. Comparei com regex contra um gabarito: o regex é ótimo no que tem
 # > formato e cego para nome, login e dado sensível; o LLM cobre isso. Mas a saída é sugestão: um responsável
-# > revisa e só então vira tag no Unity Catalog, que é o que aciona máscara e controle de acesso."
+# > revisa e só então vira tag no Unity Catalog, que é o que aciona máscara e controle de acesso.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que não só o LLM?** Custo e auditabilidade. Em produção eu rodaria o regex em **todas** as linhas (é
 #   barato e determinístico) e o LLM **uma vez por coluna** — o número de chamadas escala com o schema, não com o
@@ -364,15 +364,15 @@ for linha in sql_tags_uc("main.crm.clientes", politica)[:4]:
 # |---|---|
 # | Arquivo | `evals/titles_gold.jsonl` — 120 títulos, cada um com `event_id` (rastreável até a bronze), rótulo e marca `ambiguo` |
 # | Origem dos títulos | eventos reais da bronze (3 horas de 2026-10-01); a célula abaixo confere que os 120 existem e que o texto bate |
-# | Quem rotulou | **o autor com apoio de assistente de IA**: o assistente (um modelo maior que o avaliado, em outra sessão, seguindo as definições de categoria do prompt) propôs os rótulos e marcou os ambíguos; cabe ao autor revisar os 120 antes de citar o número como medida própria |
+# | Quem rotulou | **um modelo de linguagem** (maior que o avaliado, em outra sessão, seguindo as definições de categoria do prompt) propôs os rótulos e marcou os ambíguos; o número só vale como medida própria depois da revisão humana dos 120 (`evals/revisao_humana/`) |
 # | Amostragem | amostra de conveniência — **não** é aleatória estratificada e não cobre o dia inteiro |
 # | O rotulador viu a saída do modelo avaliado? | não: pelos horários dos arquivos, o gabarito foi gravado antes das respostas |
 #
-# Três limitações que eu diria em voz alta numa entrevista:
+# Três limitações declaradas desta avaliação:
 # 1. **n = 120.** O intervalo de confiança de 95% tem cerca de ±6 pontos percentuais (impresso abaixo). Diferença
 #    de 2 pontos entre dois prompts, com esse n, é ruído.
-# 2. **Rotulador e modelo são da mesma família.** Um assistente de IA ajudou a rotular e um modelo da mesma
-#    família é avaliado: os dois tendem a errar parecido, o que **infla** a concordância. O número é "concordância
+# 2. **Rotulador e modelo são da mesma família.** Os rótulos foram propostos por um modelo de linguagem e um
+#    modelo da mesma família é avaliado: os dois tendem a errar parecido, o que **infla** a concordância. O número é "concordância
 #    com um rotulador mais forte", não verdade absoluta. O remédio é rótulo humano independente (dois rotuladores
 #    e medir a concordância entre eles). O repositório deixa esse passo pronto: `evals/revisao_humana/` tem as
 #    planilhas **às cegas** (sem o gabarito nem a resposta do modelo) e `make revisao-medir` calcula a
@@ -464,12 +464,12 @@ print(f"erros do LLM: {len(erros)} | em título ambíguo: {sum(e[4] == '*' for e
 #   #1287" o LLM e o baseline concordam entre si e contra o rótulo. Avaliação séria revisa o gabarito nesses casos
 #   (e reavalia os dois classificadores depois — não só o que interessa).
 #
-# > 🎤 **Resposta de 30 s:** "Classifiquei títulos reais de issue e PR com um LLM leve e com um baseline de
+# > **Em resumo:** Classifiquei títulos reais de issue e PR com um LLM leve e com um baseline de
 # > palavras-chave, contra 120 exemplos rotulados. O LLM ganhou com folga, mas eu reporto o intervalo de confiança,
 # > a matriz de confusão e os recortes — ambíguos e outros idiomas — porque um número só esconde onde ele falha. E
-# > digo a limitação do gabarito: é pequeno e foi rotulado com apoio de IA, então mede concordância."
+# > digo a limitação do gabarito: é pequeno e os rótulos foram propostos por um modelo, então mede concordância.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Intervalo de Wilson** e não o "normal" (p ± 1,96·√(p(1−p)/n)): o de Wilson não sai de [0, 1] e se comporta
 #   bem com n pequeno ou p perto de 0 ou 1.
@@ -542,13 +542,13 @@ for modelo in PRECOS:
 # - **Tokenizadores diferem entre gerações de modelo**: o mesmo texto vira mais tokens nos modelos novos. Por
 #   isso a tabela é uma projeção com os tokens medidos no modelo leve, não uma cotação para os outros dois.
 #
-# > 🎤 **Resposta de 30 s:** "Eu meço tokens por item no gabarito e projeto: tokens × volume × preço, entrada e
+# > **Em resumo:** Eu meço tokens por item no gabarito e projeto: tokens × volume × preço, entrada e
 # > saída separadas. As alavancas, em ordem: não chamar o modelo quando uma regra resolve, lote por chamada para
 # > diluir o prompt fixo, modelo menor, Batch API com 50% de desconto quando não precisa de resposta na hora, e
 # > cache por hash para nunca pagar duas vezes. E desconfio de número de custo medido em ferramenta de
-# > desenvolvimento — o que vale é o `usage` da API em produção."
+# > desenvolvimento — o que vale é o `usage` da API em produção.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Prompt caching** (cache do prefixo do prompt no provedor): leitura de cache custa ~10% do preço de entrada,
 #   mas só vale acima de um tamanho mínimo de prefixo, que varia por modelo (de centenas a alguns milhares de
@@ -606,9 +606,9 @@ print(f"acurácia: só LLM={ev.acuracia(y, res_t.previsoes):.3f} | cascata (regr
 #   atinge a mesma qualidade por uma fração do custo — comum quando há milhares de exemplos rotulados. O LLM é
 #   ótimo para **começar** sem rótulo e para **gerar o rótulo** que treina o modelo barato.
 #
-# > 🎤 **Resposta de 30 s:** "LLM é a última ferramenta da cascata, não a primeira. O que tem regra estável vai
+# > **Em resumo:** LLM é a última ferramenta da cascata, não a primeira. O que tem regra estável vai
 # > por regra; o que sobra vai para o modelo. No meu caso a convenção do título resolve uma parte dos itens com a
-# > mesma acurácia, então essa parte nem é enviada. Eu só mantenho o LLM onde ele bate o baseline no gabarito."
+# > mesma acurácia, então essa parte nem é enviada. Eu só mantenho o LLM onde ele bate o baseline no gabarito.
 
 # %% [markdown]
 # ## 7. Guardrail contra prompt injection: o dado é texto não confiável 🧪
@@ -688,12 +688,12 @@ for a in ataques:
 # acesso a SQL pode ser instruído pelo dado a apagar uma tabela. Regra de projeto: **quanto menos confiável a
 # entrada, mais estreita a saída e menos poder para o modelo.**
 #
-# > 🎤 **Resposta de 30 s:** "Trato texto vindo do dado como não confiável, igual a entrada de usuário em SQL.
+# > **Em resumo:** Trato texto vindo do dado como não confiável, igual a entrada de usuário em SQL.
 # > Não confio em pedir ao modelo que ignore instruções: limito o que a saída pode ser — um enum validado, sem
 # > ferramentas, sem texto livre indo para SQL — de modo que um ataque bem-sucedido vira no máximo um rótulo
-# > errado. E mantenho exemplos de ataque no conjunto de avaliação que roda no CI."
+# > errado. E mantenho exemplos de ataque no conjunto de avaliação que roda no CI.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Isolamento por item:** processar um título por chamada elimina a contaminação entre itens do lote, ao
 #   custo de pagar o prompt fixo N vezes. É o trade-off entre §5 (custo) e §7 (isolamento); para dado hostil e
@@ -789,12 +789,12 @@ print(f"reprocessamento completo: +{llm.hits - h0} hits, +{llm.misses - m0} miss
 # **Leitura do resultado** — Com 4 threads disponíveis, o tempo total foi determinado pelo balde de fichas, não
 # pela concorrência: é o limitador que manda. E reprocessar os 120 títulos gerou só *hits*: zero chamadas novas.
 #
-# > 🎤 **Resposta de 30 s:** "Inferência em lote no Spark é `mapInPandas` por partição com um pool de threads e um
+# > **Em resumo:** Inferência em lote no Spark é `mapInPandas` por partição com um pool de threads e um
 # > limitador de taxa. Eu dimensiono partições × threads pelo rate limit do provedor, não pelo tamanho do cluster.
 # > Os lotes são determinísticos e a chamada passa por um cache por hash, então retry de task ou reexecução do job
-# > não paga de novo. E gravo modelo, versão do prompt e chave junto do resultado."
+# > não paga de novo. E gravo modelo, versão do prompt e chave junto do resultado.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Limitador por partição × global:** o balde aqui é por partição (processos diferentes não compartilham
 #   memória). O limite global é P × r. Para um limite global de verdade usa-se um serviço central (o gateway do
@@ -978,12 +978,12 @@ _ = lote_sujo.unpersist()
 #   **O sexto passou**: a data futura em `event_date` — o modelo não propôs regra para essa coluna. Cobertura de
 #   regras também se mede, e injetar defeito conhecido é a forma de medir.
 #
-# > 🎤 **Resposta de 30 s:** "O LLM lê o profiling e propõe regras num JSON de seis tipos permitidos. O pydantic
+# > **Em resumo:** O LLM lê o profiling e propõe regras num JSON de seis tipos permitidos. O pydantic
 # > valida a forma, um compilador nosso confere coluna e tipo e gera a expressão Spark, e um humano aprova regra
 # > por regra — sem decisão, a regra é rejeitada. O modelo nunca escreve SQL que executa. O ganho é sair de zero
-# > regras para um rascunho revisável em minutos; a responsabilidade pela regra continua sendo de uma pessoa."
+# > regras para um rascunho revisável em minutos; a responsabilidade pela regra continua sendo de uma pessoa.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Regra tirada do profiling descreve o passado.** "`event_date` só tem 2026-10-01" vira uma regra que reprova
 #   o dia seguinte. O revisor existe para separar **invariante do negócio** de **acidente da amostra** — é o tipo
@@ -1067,12 +1067,12 @@ print("comentário da tabela:", spark.sql(f"DESCRIBE DETAIL delta.`{EVENTOS}`").
 # uma versão 2 que proíba citar números do profiling — e medir se a taxa de edição cai. Não fiz isso aqui para
 # mostrar o resultado da versão 1 como ele saiu.
 #
-# > 🎤 **Resposta de 30 s:** "Gero o COMMENT de tabela e colunas com LLM a partir do contrato e do profiling
+# > **Em resumo:** Gero o COMMENT de tabela e colunas com LLM a partir do contrato e do profiling
 # > mascarado, com a instrução de escrever 'a confirmar' em vez de inventar. Um humano revisa, e só então aplico
 # > com ALTER TABLE — escapando o texto, porque saída de modelo é entrada não confiável. A documentação fica no
-# > catálogo, junto do dado, e é o que os assistentes de SQL usam como contexto."
+# > catálogo, junto do dado, e é o que os assistentes de SQL usam como contexto.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Não há gabarito aqui** — e eu digo isso. Texto livre não tem "acurácia". O que dá para medir: cobertura
 #   (colunas documentadas ÷ total), colunas inventadas (impresso: tem de ser zero), tamanho dentro do limite e
@@ -1162,12 +1162,12 @@ print(f"\ncategoria igual à esperada: {sum(e == t.categoria for _, e, t in tria
 # clara (OOM, *timeout*, falha de rede) — que são justamente os que não dá para provocar de forma determinística
 # num notebook.
 #
-# > 🎤 **Resposta de 30 s:** "Uso LLM como primeiro atendimento: ele recebe o erro normalizado — sem caminho, sem
+# > **Em resumo:** Uso LLM como primeiro atendimento: ele recebe o erro normalizado — sem caminho, sem
 # > stack trace e sem valores de dado — e devolve categoria, causa provável e passos, num JSON. Isso vai anexado ao
 # > alerta. Ele não executa nada: não reinicia job, não altera tabela. E a normalização serve a dois fins:
-# > privacidade e agrupar o mesmo erro pela mesma chave."
+# > privacidade e agrupar o mesmo erro pela mesma chave.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Mensagem de erro é canal de vazamento.** `CAST_INVALID_INPUT` cita o valor; violação de *constraint* cita a
 #   linha; erro de *parsing* cita o trecho do arquivo. Vale para o LLM e vale para o log e para o canal de alerta.
@@ -1224,12 +1224,12 @@ print(f"\nprompt atual no cache: {req_atual in llm} | prompt com 1 linha a mais 
 print(f"cache nesta execução do notebook: {llm.hits} hits, {llm.misses} misses → chamadas ao modelo: {llm.misses}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Avaliação de LLM é teste de regressão. Tenho um gabarito versionado, respostas
+# > **Em resumo:** Avaliação de LLM é teste de regressão. Tenho um gabarito versionado, respostas
 # > gravadas e um teste no CI que falha se a acurácia cair abaixo do limite ou se o prompt mudou sem regravar. O
 # > gate roda em segundos e sem custo porque lê o cache; só a regravação chama o modelo. O limite foi fixado
-# > depois da primeira medição, com margem — ele protege contra piora, não prova qualidade."
+# > depois da primeira medição, com margem — ele protege contra piora, não prova qualidade.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **O gate sobre cache testa o quê, exatamente?** Que **este** prompt, com **este** modelo, deu **estas**
 #   respostas, e que o código em volta as interpreta certo. Ele não detecta o provedor mudar o comportamento de um
@@ -1340,7 +1340,7 @@ print(f"cache nesta execução do notebook: {llm.hits} hits, {llm.misses} misses
 #   outro custo de plataforma.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Como você garante que uma etapa com LLM é reproduzível?**
 # <details><summary>Resposta</summary>
@@ -1353,7 +1353,7 @@ print(f"cache nesta execução do notebook: {llm.hits} hits, {llm.misses} misses
 # <details><summary>Resposta</summary>
 # Gabarito rotulado, baseline simples e métrica com intervalo de confiança. No caso dos títulos: 120 exemplos,
 # LLM contra palavras-chave, matriz de confusão e recortes por dificuldade. E digo as limitações: amostra pequena
-# e rótulo feito com apoio de IA medem concordância, não verdade (§4).
+# e rótulo proposto por modelo medem concordância, não verdade (§4).
 # </details>
 #
 # **3. Quanto custa classificar 1 milhão de registros? Como você reduz?**
@@ -1434,7 +1434,7 @@ print(f"cache nesta execução do notebook: {llm.hits} hits, {llm.misses} misses
 # - **LLM é dependência externa cara e não determinística**: interface, saída com schema validada, prompt
 #   versionado, cache por hash. Reprocessar é de graça; teste e CI rodam sem rede.
 # - **Sem gabarito não há caso de uso.** Baseline simples, intervalo de confiança, matriz de confusão, leitura dos
-#   erros — e as limitações do gabarito ditas em voz alta.
+#   erros — e as limitações do gabarito declaradas.
 # - **Guardrails são estrutura, não pedido ao modelo**: mascarar antes de enviar, saída estreita, sem
 #   ferramentas, texto do modelo escapado antes de virar SQL, erro normalizado sem valor de dado.
 # - **Humano aprova o que muda produção de forma durável** (regras, documentação, classificação); o que é por

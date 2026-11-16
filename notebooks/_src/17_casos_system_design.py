@@ -7,24 +7,24 @@
 # ---
 
 # %% [markdown]
-# # 17 · Simulado de system design e troubleshooting
+# # 17 · Casos de system design e troubleshooting
 #
-# > Prova que dá para responder uma pergunta aberta de arquitetura de dados com método — requisitos, conta de
+# > Aplica um método a perguntas abertas de arquitetura de dados — requisitos, conta de
 # > guardanapo, desenho, decisões e trade-offs — e diagnosticar os 10 incidentes clássicos de Spark/Delta com
 # > sintoma, causa e correção, reproduzindo localmente os que cabem em segundos.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Arquitetura e desenvolvimento de pipelines | §1 (framework), §2–§5 (4 casos) |
 # | Microsoft Azure | Event Hubs, ADLS Gen2, ADF, Key Vault, Entra ID, Monitor nos 4 casos |
 # | Databricks e processamento de dados | Auto Loader, Structured Streaming, Lakeflow, MERGE, Unity Catalog; §6 runbook |
 # | IA aplicada à engenharia de dados | §4 (detecção de anomalia), §5 (conversão de SQL legado assistida) |
-# | Times ágeis multidisciplinares | §1 (requisitos com o negócio), §7 (perguntas ao entrevistador) |
+# | Requisitos com o negócio e diagnóstico | §1 (requisitos com o negócio), §7 (perguntas de diagnóstico) |
 #
 # Legenda: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui)
 #
-# **Como usar:** leia o framework (§1), tente responder cada caso em voz alta em 10–15 min, e só depois abra o
-# desenho e as decisões. O runbook (§6) é para a pergunta "conte de um incidente que você resolveu".
+# **Como usar:** leia o framework (§1), tente resolver cada caso por conta própria em 10–15 min e só depois abra
+# o desenho e as decisões. O runbook (§6) reúne os incidentes clássicos com sintoma, causa e correção.
 
 # %% [markdown]
 # ## Setup
@@ -56,14 +56,14 @@ print(f"bronze: {bronze.count():,} eventos | demo em {DEMO.relative_to(Path(s.da
 # %% [markdown]
 # ## 1. O framework de resposta 🧪
 #
-# **O que é** — um roteiro fixo para perguntas abertas ("desenhe um pipeline que..."). O entrevistador não
-# avalia se você acertou "a" arquitetura; avalia **se você pergunta antes de desenhar, se faz conta, se nomeia
-# trade-offs e se pensa em operação** (falha, custo, segurança).
+# **O que é** — um roteiro fixo para problemas abertos ("desenhe um pipeline que..."). Não existe "a"
+# arquitetura certa; o que separa um bom desenho é **perguntar antes de desenhar, fazer conta, nomear
+# trade-offs e pensar em operação** (falha, custo, segurança).
 #
 # **Por que importa** — o erro clássico é desenhar caixas nos primeiros 30 segundos. Sem requisito, toda
 # escolha é chute; sem volumetria, "Kafka" ou "Spark" é moda, não decisão.
 #
-# **Como funciona** — 10 passos, com o tempo aproximado numa entrevista de 45 min:
+# **Como funciona** — 10 passos, com o tempo aproximado numa sessão de desenho de 45 min:
 #
 # | # | Passo | Perguntas / o que entregar | ~min |
 # |---|---|---|---|
@@ -109,8 +109,8 @@ for k, v in CAL.items():
     print(f"  {k:22} {v:8.1f}")
 
 # %% [markdown]
-# Com a calibração, a calculadora. Toda premissa é parâmetro explícito — em entrevista, **diga a premissa em voz
-# alta** antes do número.
+# Com a calibração, a calculadora. Toda premissa é parâmetro explícito — **declare a premissa** antes do
+# número.
 
 # %%
 def volumetria(
@@ -151,12 +151,12 @@ print("Sanidade — o próprio GH Archive (~1 dia = 24 × a hora medida):")
 mostra(volumetria(json_bytes / len(arqs) * 24 / 1e9, CAL["bytes_por_evento_json"], retencao_dias=30))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s (sobre o método):** "Antes de desenhar, pergunto quem consome, qual a latência
+# > **Em resumo (o método):** Antes de desenhar, pergunto quem consome, qual a latência
 # > aceitável e o volume. Faço a conta: eventos por segundo na média e no pico, MB/s, quanto ocupa comprimido,
 # > quantos núcleos. Aí escolho batch ou streaming, desenho bronze/silver/gold, e fecho com idempotência,
-# > qualidade, segurança, observabilidade e custo — dizendo o trade-off de cada escolha."
+# > qualidade, segurança, observabilidade e custo — dizendo o trade-off de cada escolha.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Números de bolso:** 1 dia = 86.400 s (~10⁵); 1 milhão/dia ≈ 12/s; 1 bilhão/dia ≈ 12 mil/s. Pico típico
 #   2–5× a média (eventos de app seguem o horário comercial).
@@ -168,7 +168,7 @@ mostra(volumetria(json_bytes / len(arqs) * 24 / 1e9, CAL["bytes_por_evento_json"
 # </details>
 #
 # **Trade-offs / quando NÃO usar**
-# - O framework é um roteiro, não um formulário: se o entrevistador quer ir direto para o MERGE, vá.
+# - O framework é um roteiro, não um formulário: se a discussão precisa ir direto para o MERGE, vá.
 # - Volumetria com precisão falsa ("37,4 núcleos") soa mal; arredonde e diga a ordem de grandeza.
 
 # %% [markdown]
@@ -243,20 +243,20 @@ print(f"\nEvent Hubs: 1 unidade de vazão (TU, Standard) ≈ 1 MB/s ou 1.000 eve
 # | Layout | Liquid Clustering | `PARTITIONED BY (date, event)` | Evita small files em partições de cauda longa |
 # | Disparo | `availableNow` a cada 15 min | contínuo | ~mesma entrega para SLA de 30 min, cluster desligado entre execuções |
 #
-# | Um pleno responderia | Um sênior responde |
+# | Resposta superficial | Resposta completa |
 # |---|---|
 # | "Kafka → Spark → Delta → Power BI." | Pergunta SLA e volume antes; faz a conta (eventos/s, TU, TB); justifica streaming × batch pelo custo |
 # | Partição por data e tipo de evento | Mostra o risco de small files e propõe Liquid Clustering; fala de `OPTIMIZE` e tamanho-alvo |
 # | "O Spark garante exactly-once" | Explica onde (offset + checkpoint + sink transacional) e onde **não** (retry do app) → dedup por `event_id` |
 # | Não menciona PII | Tokeniza na silver, mascara no UC, define retenção e como atender pedido de exclusão (LGPD) |
 #
-# > 🎤 **Resposta de 30 s:** "1 TB/dia de 1 KB são ~1 bilhão de eventos, ~12 mil/s na média e ~50 mil no pico.
+# > **Em resumo:** 1 TB/dia de 1 KB são ~1 bilhão de eventos, ~12 mil/s na média e ~50 mil no pico.
 # > App → API de coleta → Event Hubs com protocolo Kafka → Structured Streaming no Databricks gravando a bronze
 # > em Delta, com Capture no ADLS para replay barato. Silver deduplica por `event_id`, tipa e trata PII; gold tem
 # > fatos e métricas para o Databricks SQL. Se o SLA for de 30 minutos, rodo `availableNow` agendado em vez de
-# > streaming contínuo: mesmo código, bem menos custo."
+# > streaming contínuo: mesmo código, bem menos custo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Partições do Event Hubs** definem o paralelismo máximo do consumidor (1 tarefa por partição); dimensione
 #   pelo pico com folga — aumentar depois depende do tier.
@@ -365,7 +365,7 @@ print("update atrasado de uma chave apagada:", [r for r in estado() if r[0] == 2
 # ou guardar os *tombstones* por um tempo. No Lakeflow Spark Declarative Pipelines, `AUTO CDC ... SEQUENCE BY lsn`
 # (antigo `APPLY CHANGES INTO`) faz exatamente isso: dedup, ordem, delete e SCD1/SCD2, com tombstones.
 #
-# | Um pleno responderia | Um sênior responde |
+# | Resposta superficial | Resposta completa |
 # |---|---|
 # | "Uso o ADF com `updated_at`." | Pergunta sobre deletes físicos: marca d'água não os vê → CDC pelo log |
 # | `MERGE ... WHEN MATCHED UPDATE` | Dedup por chave com maior LSN, condição `s.lsn > t.lsn`, `DELETE`, idempotência provada |
@@ -373,12 +373,12 @@ print("update atrasado de uma chave apagada:", [r for r in estado() if r[0] == 2
 # | — | Delete físico + evento atrasado ressuscita a linha → soft delete/tombstone |
 # | — | Mudança de schema no banco (coluna nova) → schema evolution controlada no MERGE, alerta ao dono |
 #
-# > 🎤 **Resposta de 30 s:** "CDC lendo o log de transações — Debezium no Event Hubs se há outros consumidores,
+# > **Em resumo:** CDC lendo o log de transações — Debezium no Event Hubs se há outros consumidores,
 # > ou Lakeflow Connect se quero menos peças. A bronze guarda o log de mudanças cru; a silver aplica com MERGE:
 # > última mudança por chave pelo LSN, só aplica se o LSN for maior que o da tabela, delete vira delete ou soft
-# > delete. Reprocessar o mesmo lote não muda nada. Marca d'água por `updated_at` eu evito: não enxerga delete."
+# > delete. Reprocessar o mesmo lote não muda nada. Marca d'água por `updated_at` eu evito: não enxerga delete.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Carga no banco:** CDC lê o log, não as tabelas; o snapshot inicial sim — faça em réplica de leitura ou na
 #   janela de manutenção.
@@ -447,19 +447,19 @@ anomalias.select(
 # | Detecção | z-score / EWMA com linha de base sazonal | Modelo de ML (Isolation Forest, Prophet) | Explicável, barato; ML quando as regras não bastarem e houver rótulo |
 # | Alerta | Tabela de alertas + Databricks SQL Alert / Logic App | E-mail direto do job | Histórico permite medir falso positivo e silenciar |
 #
-# | Um pleno responderia | Um sênior responde |
+# | Resposta superficial | Resposta completa |
 # |---|---|
 # | "Streaming com Spark e um threshold fixo." | Linha de base sazonal, volume mínimo, histerese (2 janelas) — e mede falso positivo |
 # | Esquece dado atrasado | Watermark: quanto esperar × latência do alerta; evento atrasado corrige a métrica, não re-alerta |
 # | Cluster de streaming 24×7 sem pensar | Avalia custo: micro-lote a cada 1–2 min com cluster pequeno, ou serverless |
 # | — | Define o dono do alerta e o runbook: alerta sem ação vira ruído e é ignorado |
 #
-# > 🎤 **Resposta de 30 s:** "Event Hubs → Structured Streaming agregando por minuto com watermark → tabela Delta
+# > **Em resumo:** Event Hubs → Structured Streaming agregando por minuto com watermark → tabela Delta
 # > de métricas → detecção por z-score contra uma linha de base sazonal da gold → alerta com histórico. Começo
 # > explicável e meço falso positivo; ML só quando a regra não der conta. 5 minutos de SLA cabem em micro-lote —
-# > não pago sub-segundo sem precisar."
+# > não pago sub-segundo sem precisar.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Estado do streaming:** janelas com watermark limpam o estado antigo; sem watermark, o estado cresce até
 #   o OOM. RocksDB como *state store* para estado grande (notebook 06).
@@ -547,7 +547,7 @@ reconciliar(legado, novo, "id", cols, hora).show(truncate=False)
 # por `COUNT(*)` esconderia defeitos que se compensam — e os 2 valores trocados nem aparecem na contagem. O checksum por partição (`xxhash64` somado — independente da ordem) aponta onde
 # olhar; o diff por chave diz o quê.
 #
-# | Um pleno responderia | Um sênior responde |
+# | Resposta superficial | Resposta completa |
 # |---|---|
 # | "Converto as procedures para PySpark e migro tudo." | Inventário + linhagem, desliga o que está morto, migra em ondas por domínio com corte por consumidor |
 # | "Comparo a contagem de linhas." | Reconciliação em níveis (contagem, checksum por partição, diff por chave) automatizada e diária |
@@ -555,13 +555,13 @@ reconciliar(legado, novo, "id", cols, hora).show(truncate=False)
 # | — | Plano de volta, *freeze* de mudanças no legado, dono de negócio que assina a paridade |
 # | — | IA para acelerar a conversão de SQL (ex.: Lakebridge, LLM) **com** a reconciliação como teste de aceitação |
 #
-# > 🎤 **Resposta de 30 s:** "Migração em ondas, não big bang: inventário com linhagem para saber o que é usado,
+# > **Em resumo:** Migração em ondas, não big bang: inventário com linhagem para saber o que é usado,
 # > fundação com Unity Catalog e CI/CD, depois domínio a domínio — ingerindo as fontes originais, reescrevendo as
 # > transformações e rodando em paralelo com o legado. Paridade com reconciliação automática em níveis: contagem,
 # > checksum por partição, diff por chave. O corte é por relatório, com plano de volta, e o legado desliga quando
-# > o último consumidor sai."
+# > o último consumidor sai.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Diferenças semânticas** que quebram paridade: `NULL` em concatenação, collation (SQL Server é
 #   case-insensitive por padrão), arredondamento de `DECIMAL`, fuso horário, `DATETIME` com precisão de 3,33 ms.
@@ -864,9 +864,9 @@ print(f"arquivos candidatos à leitura — só a chave: {tudo} (tabela toda) | c
 # GROUP BY 1 ORDER BY 2 DESC LIMIT 10;
 # ```
 #
-# > 🎤 **Resposta de 30 s (para "conte de um incidente"):** use a estrutura **sintoma → onde olhei → causa →
-# > correção → o que mudei para não acontecer de novo**. O entrevistador sênior quer ouvir a última parte: o
-# > alerta, o teste ou o padrão que você criou — não só o "consertei".
+# > **Em resumo (relato de incidente):** a estrutura é **sintoma → onde olhei → causa → correção → o que
+# > mudei para não acontecer de novo**. A última parte é a que mais importa: o alerta, o teste ou o padrão
+# > criado — não só o "consertei".
 
 # %% [markdown]
 # ## No Databricks / Azure ☁️
@@ -899,9 +899,10 @@ print(f"arquivos candidatos à leitura — só a chave: {tudo} (tabela toda) | c
 # - **System tables** respondem 6.1 e 6.10 em SQL, sem acessar a Spark UI de execuções antigas.
 
 # %% [markdown]
-# ## 7. Perguntas para o candidato fazer ao entrevistador (sinal de senioridade)
+# ## 7. Perguntas de diagnóstico de uma plataforma de dados
 #
-# Perguntas que mostram que você pensa em operação, time e resultado — escolha 3 ou 4:
+# Antes de propor mudança numa plataforma que já existe, estas perguntas mostram onde está a dor — operação,
+# time e resultado:
 #
 # **Sobre a plataforma e o dado**
 # 1. Qual é o maior problema da plataforma de dados hoje — custo, confiabilidade, velocidade de entrega ou qualidade?
@@ -910,18 +911,17 @@ print(f"arquivos candidatos à leitura — só a chave: {tudo} (tabela toda) | c
 # 4. Como é o fluxo de deploy: Asset Bundles/Terraform, ambientes dev/hml/prd, quem aprova?
 # 5. Batch ou streaming predominam? Existe algum SLA de minutos que doa hoje?
 #
-# **Sobre o time e o trabalho**
+# **Sobre o time e o processo**
 # 6. Como as demandas chegam ao time de dados — produto, squads, fila de tickets? Quem decide a prioridade?
 # 7. Como é o plantão (on-call) e qual foi o último incidente relevante? O que mudou depois dele?
 # 8. Como o time está usando IA hoje no desenvolvimento e nos pipelines? O que funcionou e o que não?
-# 9. O que diferencia um engenheiro sênior de um pleno aqui, na prática?
-# 10. O que você esperaria que eu entregasse nos primeiros 90 dias?
+# 9. Quem é dono de cada tabela da gold e como se decide mudar um contrato?
+# 10. Que entrega dos próximos 90 dias mais mudaria o resultado do negócio?
 #
-# Evite perguntar no fim o que estava no anúncio da vaga — e anote as respostas: elas viram material para a
-# próxima etapa.
+# As respostas viram a lista de prioridades: o que dói hoje, quem decide e como se mede o sucesso.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Desenhe um pipeline para 1 TB/dia. Por onde começa?**
 # <details><summary>Resposta</summary>

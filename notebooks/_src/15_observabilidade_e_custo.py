@@ -12,13 +12,13 @@
 # > Este notebook prova que dá para responder "o que rodou, quanto demorou, o que falhou, o dado está
 # > atualizado e quanto custou" com SQL — sem abrir a Spark UI e sem depender da memória de ninguém.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Arquitetura e desenvolvimento de pipelines | §2–§3 (registro de execução por etapa), §8 (freshness, volume, schema, distribuição, lineage), §9 (SLI/SLO/SLA) |
 # | Databricks e processamento de dados | §5 (Spark UI REST), §6 (`DESCRIBE HISTORY`), §7 (`StreamingQueryListener`), ☁️ system tables e alertas SQL |
 # | Microsoft Azure | ☁️ Azure Monitor / Log Analytics, Spot VMs, tags e chargeback |
 # | Python avançado | §2 (context manager + decorator em `oss_lakehouse.observability`), §4 (logging estruturado) |
-# | Times ágeis multidisciplinares | §8 (para onde vai o alerta e quem acorda), §10 (FinOps: custo por time) |
+# | Alertas e custo por time | §8 (para onde vai o alerta e quem acorda), §10 (FinOps: custo por time) |
 #
 # Legenda: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui)
 
@@ -103,12 +103,12 @@ for h in HORAS:
 # | Lineage | (não existe) | `_source_file` por linha; ☁️ `system.access.table_lineage` | §8 |
 # | Qualidade do dado | (não existe) | freshness, volume, schema, distribuição | §8 |
 #
-# > 🎤 **Resposta de 30 s:** "Eu separo observabilidade de pipeline em duas perguntas. 'O job rodou bem?' —
+# > **Em resumo:** Eu separo observabilidade de pipeline em duas perguntas. 'O job rodou bem?' —
 # > respondo com uma tabela de execuções por etapa, logs estruturados com o id da execução e as métricas do
 # > Spark. 'O dado está bom?' — respondo com freshness, volume, schema e distribuição, mais lineage para saber o
-# > impacto. O incidente caro é o job verde com dado errado, então a segunda pergunta precisa de alerta próprio."
+# > impacto. O incidente caro é o job verde com dado errado, então a segunda pergunta precisa de alerta próprio.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Monitoramento × observabilidade:** monitorar é vigiar o que você já sabia que podia quebrar (limite em
 #   métrica conhecida); observabilidade é ter contexto suficiente para investigar o que você **não** previu
@@ -250,13 +250,13 @@ for nome, path in [("eventos_por_tipo_hora", OUT_TIPO), ("top_repos_hora", OUT_R
     print(f"{nome:<22}", "  ".join(f"{r['event_hour'][-5:]}→{r['count']}" for r in linhas))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Cada etapa do pipeline roda dentro de um context manager que grava uma linha
+# > **Em resumo:** Cada etapa do pipeline roda dentro de um context manager que grava uma linha
 # > numa tabela Delta de execuções: pipeline, etapa, id da execução, início, fim, duração, linhas lidas e
 # > escritas, status e erro. O registro fica no `finally`, então a falha também é registrada e a exceção
 # > continua subindo para o orquestrador. Linhas escritas eu leio do `operationMetrics` do commit do Delta, sem
-# > um `count()` extra. Com isso, duração por etapa, taxa de falha e tendência viram consultas SQL."
+# > um `count()` extra. Com isso, duração por etapa, taxa de falha e tendência viram consultas SQL.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que `except BaseException`:** `KeyboardInterrupt` e o cancelamento do job não herdam de `Exception`.
 #   Etapa cancelada também precisa ficar registrada como não concluída.
@@ -371,12 +371,12 @@ spark.sql(f"""
 """).show(truncate=False)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Com a tabela de execuções eu respondo três coisas: duração por etapa com mediana
+# > **Em resumo:** Com a tabela de execuções eu respondo três coisas: duração por etapa com mediana
 # > e máximo, taxa de falha por etapa e por execução, e tendência com window function comparando cada execução
 # > à mediana das anteriores. Cuidado com duas armadilhas: cold start na primeira execução e variação de volume
-# > — normalizo por linha e só alerto se o desvio persistir."
+# > — normalizo por linha e só alerto se o desvio persistir.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Mediana e percentis, não média:** duração tem cauda longa; uma execução de 40 min puxa a média e esconde
 #   que o típico são 5. Para SLA, olha-se p95/p99.
@@ -432,11 +432,11 @@ erros = [json.loads(linha) for linha in linhas_log if json.loads(linha)["level"]
 print(f"\nfiltro por campo (level=ERROR): {len(erros)} de {len(linhas_log)} linhas → step={erros[0]['step']}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Log em JSON, uma linha por evento, com campos fixos: timestamp em UTC, nível,
+# > **Em resumo:** Log em JSON, uma linha por evento, com campos fixos: timestamp em UTC, nível,
 # > pipeline, etapa e um id de correlação da execução. Assim a ferramenta de log filtra por campo e eu junto log,
-# > tabela de execuções e Spark UI pelo mesmo id. Nunca dado pessoal nem segredo no log."
+# > tabela de execuções e Spark UI pelo mesmo id. Nunca dado pessoal nem segredo no log.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Onde o log vai parar no Databricks:** o `stdout`/`stderr`/log4j do driver ficam no cluster e somem com
 #   ele, a menos que se configure *compute log delivery* (entrega de logs do cluster para um destino, ex.: um
@@ -495,12 +495,12 @@ print(as_table([s.as_row() for s in stages[:5]]))
 # custo fixo que apareceu no §3 entre as etapas. Em tabela pequena com muitos commits, esse é o primeiro lugar
 # para olhar (menos commits, log compactado por checkpoint, menos partições de snapshot em ambiente local).
 #
-# > 🎤 **Resposta de 30 s:** "Eu marco os jobs de cada etapa com um job group e guardo o rótulo na tabela de
+# > **Em resumo:** Eu marco os jobs de cada etapa com um job group e guardo o rótulo na tabela de
 # > execuções. Quando uma etapa fica lenta, pego o rótulo e leio os stages pela REST API da Spark UI: tempo,
 # > entrada, shuffle e spill. No Databricks, para histórico, uso `system.query.history` e a Spark UI do job run
-# > — a UI ao vivo some com o cluster."
+# > — a UI ao vivo some com o cluster.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Retenção:** a UI guarda um número limitado de jobs/stages em memória (`spark.ui.retainedJobs`,
 #   `retainedStages`); para depois do fim da aplicação existe o *event log* + History Server. No Databricks a
@@ -564,12 +564,12 @@ spark.sql(f"DESCRIBE HISTORY delta.`{RUNS_PATH}`").groupBy("operation").agg(
 ).show()
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Toda escrita em Delta deixa um commit com usuário, operação, parâmetros e
+# > **Em resumo:** Toda escrita em Delta deixa um commit com usuário, operação, parâmetros e
 # > métricas. `DESCRIBE HISTORY` me dá a trilha de auditoria da tabela e, pelo `operationMetrics`, linhas
 # > inseridas, atualizadas e removidas sem eu instrumentar nada. Para auditoria de **acesso** — quem leu — o
-# > histórico não serve; aí é `system.access.audit` no Unity Catalog."
+# > histórico não serve; aí é `system.access.audit` no Unity Catalog.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Retenção:** o histórico vive no log e é limpo conforme `delta.logRetentionDuration` (padrão 30 dias).
 #   Auditoria de longo prazo exige copiar o histórico para outra tabela ou usar as system tables.
@@ -644,12 +644,12 @@ print("regra: duração do lote > intervalo do gatilho →",
       "ALERTA (ficando para trás)" if mais_lento["trigger_ms"] > INTERVALO_ALVO_MS else "OK (cabe no intervalo)")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Stream não tem status final, então eu monitoro o progresso de cada micro-lote com
+# > **Em resumo:** Stream não tem status final, então eu monitoro o progresso de cada micro-lote com
 # > um `StreamingQueryListener`: linhas de entrada, linhas por segundo processadas contra recebidas e duração
 # > do lote contra o intervalo do gatilho. Se o processado fica abaixo do recebido por vários lotes, o stream
-# > está acumulando atraso — o alerta sai antes de o consumidor reclamar do dado velho."
+# > está acumulando atraso — o alerta sai antes de o consumidor reclamar do dado velho.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **`inputRowsPerSecond` × `processedRowsPerSecond`:** o primeiro é a taxa de chegada medida entre gatilhos;
 #   o segundo é linhas ÷ duração do lote. Em `availableNow` o dado já estava todo lá, então a taxa de entrada
@@ -819,13 +819,13 @@ for metrica in ("pct_push", "pct_sem_org", "pct_actions_bot"):
 )
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Eu monitoro cinco sinais no dado: freshness, volume, schema, distribuição e
+# > **Em resumo:** Eu monitoro cinco sinais no dado: freshness, volume, schema, distribuição e
 # > lineage. Freshness e volume primeiro — são baratos e pegam a maioria dos incidentes. Cada checagem é uma
 # > regra com mensagem que diz observado, esperado e tabela; a severidade decide o destino: quebra de SLA vai
 # > para o PagerDuty, desvio vai para o canal do time, o resto para o resumo por e-mail. Alerta sem dono e sem
-# > runbook eu não crio."
+# > runbook eu não crio.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Freshness do evento × da carga:** `max(created_at)` mede o dado; `max(_ingested_at)` mede o pipeline.
 #   Fonte parada com pipeline saudável dá carga recente e evento velho — por isso medir os dois.
@@ -883,12 +883,12 @@ print(f"esta falha gastou: {sli['falhas'] / orcamento:.0%} do orçamento do mês
 print(f"SLO cumprido nesta amostra? {'sim' if sli_sucesso >= SLO_SUCESSO else 'não'} (amostra de {sli['execucoes']} execuções: pequena demais para concluir)")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "SLI é o que eu meço, SLO é a meta interna, SLA é o que prometo ao consumidor, com
+# > **Em resumo:** SLI é o que eu meço, SLO é a meta interna, SLA é o que prometo ao consumidor, com
 # > folga em relação ao SLO. Para dados eu defino por tabela crítica: freshness (dado disponível até tal hora),
 # > completude (volume dentro da faixa) e sucesso das execuções. O orçamento de erro decide prioridade: se
-# > estourou, o time para de entregar funcionalidade e estabiliza."
+# > estourou, o time para de entregar funcionalidade e estabiliza.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **SLO do consumidor, não do job:** "o job terminou às 6h" não interessa; "o dashboard das 8h tem o dado de
 #   ontem completo" interessa. Meça na ponta (a tabela gold), não no meio.
@@ -922,7 +922,7 @@ print(f"SLO cumprido nesta amostra? {'sim' if sli_sucesso >= SLO_SUCESSO else 'n
 # **serverless** não há parcela de VM separada: ela está embutida no DBU.
 #
 # **Por que importa** — A mesma carga pode custar várias vezes mais só pela escolha do compute. É a pergunta
-# de sênior: "como você reduziria a conta?".
+# certa: "como você reduziria a conta?".
 #
 # **Como funciona** — as alavancas, da mais barata de puxar para a mais cara:
 #
@@ -1002,13 +1002,13 @@ print(f"\nserverless a US$ {PRECO_DBU_SERVERLESS}/DBU (ilustrativo) empata com o
 # - Serverless não se compara por "nós × horas": compara-se o DBU **medido** em `system.billing.usage` com o
 #   custo total do clássico (DBU + VM + o tempo de subida do cluster, que também é cobrado).
 #
-# > 🎤 **Resposta de 30 s:** "A conta é DBU vezes preço do DBU mais a VM. Eu ataco na ordem: job em job compute
+# > **Em resumo:** A conta é DBU vezes preço do DBU mais a VM. Eu ataco na ordem: job em job compute
 # > e não em all-purpose; auto-termination curto nos interativos; spot nos workers de batch, com driver
 # > on-demand; autoscaling com teto; Photon só onde a medição mostra que o ganho de tempo paga o DBU maior;
 # > serverless para carga curta e intermitente. E tudo com tag obrigatória por policy, para o custo ter dono —
-# > acompanho por `system.billing.usage` cruzado com `list_prices`."
+# > acompanho por `system.billing.usage` cruzado com `list_prices`.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **O que `system.billing.usage` não tem:** no Azure, o custo da **VM, disco e rede** do compute clássico
 #   aparece no Azure Cost Management, não nas system tables. As tags do cluster são propagadas aos recursos
@@ -1193,7 +1193,7 @@ print(f"\nserverless a US$ {PRECO_DBU_SERVERLESS}/DBU (ilustrativo) empata com o
 # tags — o FinOps começa no código revisado, não no painel.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Como você sabe que um pipeline está saudável?**
 # <details><summary>Resposta</summary>

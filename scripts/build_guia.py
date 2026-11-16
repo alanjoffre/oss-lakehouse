@@ -1,4 +1,4 @@
-"""Gera o GUIA_DE_ESTUDO.md a partir da seção "Perguntas de entrevista" de cada notebook.
+"""Gera o GUIA_TECNICO.md a partir da seção "Perguntas técnicas" de cada notebook.
 
 Fonte única: a pergunta e a resposta moram no notebook; o guia é derivado (nunca editar à mão).
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "notebooks" / "_src"
-OUT = ROOT / "GUIA_DE_ESTUDO.md"
+OUT = ROOT / "GUIA_TECNICO.md"
 
 QUESTION = re.compile(r"^\*\*(\d+)\.\s*(.+?)\*\*\s*$")
 
@@ -43,7 +43,7 @@ def parse(path: Path) -> tuple[str, list[QA]]:
     lines = markdown_lines(path)
     title = next((ln[2:].strip() for ln in lines if ln.startswith("# ")), path.stem)
     try:
-        start = next(i for i, ln in enumerate(lines) if ln.startswith("## Perguntas de entrevista"))
+        start = next(i for i, ln in enumerate(lines) if ln.startswith("## Perguntas técnicas"))
     except StopIteration:
         return title, []
     end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
@@ -74,9 +74,9 @@ def main() -> int:
     total = sum(len(qas) for _, _, qas in parsed)
 
     out = [
-        "# Guia de estudo",
+        "# Guia de perguntas técnicas",
         "",
-        "> Gerado por `scripts/build_guia.py` a partir da seção **Perguntas de entrevista** de cada notebook."
+        "> Gerado por `scripts/build_guia.py` a partir da seção **Perguntas técnicas** de cada notebook."
         " Não editar à mão: mude a pergunta no notebook e rode `make guia`.",
         "",
         f"**{total} perguntas** em {len(parsed)} notebooks. Clique na pergunta para abrir a resposta curta;"

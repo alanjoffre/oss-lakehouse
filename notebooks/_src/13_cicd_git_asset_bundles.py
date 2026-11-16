@@ -13,12 +13,12 @@
 # > de pacote e de contrato, lint e testes automáticos, um wheel construído e um job multi-tarefa do Databricks
 # > definido como código e promovido de dev para prod pelo GitHub Actions.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Git e práticas de versionamento | §1 a §4 (trunk-based, Conventional Commits, SemVer, revert × reset, proteção de branch) |
-# | Databricks (projetos com Databricks — diferencial) | §7 e §8 (`databricks.yml`, `resources/jobs.yml`) |
+# | Databricks Asset Bundles | §7 e §8 (`databricks.yml`, `resources/jobs.yml`) |
 # | Arquitetura e desenvolvimento de pipelines | §6 (pirâmide de testes), §8 (job bronze → silver → gold → quality) |
-# | Ambientes ágeis | §1, §9 (PR pequeno, CI em minutos, deploy contínuo em dev, release por tag) |
+# | Entrega contínua | §1, §9 (PR pequeno, CI em minutos, deploy contínuo em dev, release por tag) |
 # | Python avançado | §6 e §7 (pytest, empacotamento com `uv build`) |
 #
 # Legenda: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui)
@@ -126,12 +126,12 @@ commit(base, "src/bronze.py", "# ingestão incremental\n# org nulo ok\n", "fix(b
 git(base, "log", "--graph", "--oneline", "--all", "--decorate", show=True)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Uso trunk-based: branches curtas, PR pequeno com revisão e CI, merge na `main`
+# > **Em resumo:** Uso trunk-based: branches curtas, PR pequeno com revisão e CI, merge na `main`
 # > várias vezes por semana, `main` sempre implantável e deploy automático em dev. GitFlow faz sentido para
 # > software com versões paralelas em campo; em pipeline de dados, branch longa diverge do schema e do dado de
-# > produção e o merge vira migração arriscada."
+# > produção e o merge vira migração arriscada.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Mudança de schema incompatível em trunk-based:** padrão *expand/contract* — 1) adiciona a coluna nova
 #   (compatível), 2) migra consumidores, 3) remove a antiga num release posterior. Cada passo é um PR pequeno.
@@ -178,11 +178,11 @@ for estrategia in ("merge", "rebase"):
 # No merge, a história mostra a bifurcação; no rebase, os dois commits da feature aparecem depois do `fix` com
 # **hashes diferentes** dos originais — são commits novos.
 #
-# > 🎤 **Resposta de 30 s:** "Na minha branch local, rebase para manter o histórico limpo; em branch
+# > **Em resumo:** Na minha branch local, rebase para manter o histórico limpo; em branch
 # > compartilhada, nunca reescrevo. No PR, prefiro *squash merge* ou *rebase merge* para a `main` ficar linear,
-# > com um commit por mudança lógica — facilita revert e bisect."
+# > com um commit por mudança lógica — facilita revert e bisect.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Regra de ouro do rebase:** não rebasear commits já publicados que outros usam. Se precisar, `push
 #   --force-with-lease` (falha se o remoto tiver algo que você não viu), nunca `--force` puro.
@@ -286,11 +286,11 @@ for nome, novo in [("adiciona payload_version", com_coluna), ("remove public", s
     print(f"{nome:<26} → {n.upper():<5} {motivos}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Uso Conventional Commits para que a versão e o changelog saiam do histórico:
+# > **Em resumo:** Uso Conventional Commits para que a versão e o changelog saiam do histórico:
 # > `feat` sobe MINOR, `fix` sobe PATCH, `!` sobe MAJOR. E versiono também o contrato da tabela: coluna nova
-# > anulável é MINOR; remover coluna ou mudar tipo é MAJOR e exige aviso aos consumidores e período de convivência."
+# > anulável é MINOR; remover coluna ou mudar tipo é MAJOR e exige aviso aos consumidores e período de convivência.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Automação:** `commitlint` valida a mensagem no PR; *release-please* ou *semantic-release* abrem o PR de
 #   release com versão e changelog calculados.
@@ -341,12 +341,12 @@ print("\n--- mas o reflog ainda sabe onde ele está:")
 git(resetar, "reflog", "-2", show=True)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Em branch compartilhada, desfaço com `revert`: commit novo, histórico intacto, CI e
+# > **Em resumo:** Em branch compartilhada, desfaço com `revert`: commit novo, histórico intacto, CI e
 # > deploy rodam de novo. `reset` só no que é meu e não foi publicado. E se alguém fez reset por engano, o `reflog`
 # > recupera o commit. Em dados, lembrar que reverter o código não reverte a tabela — para isso há time travel e
-# > `RESTORE` do Delta (notebook 10)."
+# > `RESTORE` do Delta (notebook 10).
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **`reset --soft` / `--mixed`:** voltam a branch mas mantêm as mudanças no índice/diretório — útil para refazer
 #   commits locais.
@@ -415,11 +415,11 @@ print("\nnbstripout configurado?", any("nbstripout" in r["repo"] for r in cfg["r
 run([sys.executable, "-m", "ruff", "check", "src", "tests", "scripts"])
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "A `main` é protegida: só entra por PR com uma aprovação, dono da área revisando,
+# > **Em resumo:** A `main` é protegida: só entra por PR com uma aprovação, dono da área revisando,
 # > checks do CI obrigatórios e sem force push. Localmente, pre-commit roda ruff e checagens de YAML e segredo no
-# > commit — o CI repete as mesmas checagens porque gancho local se desliga com `--no-verify`."
+# > commit — o CI repete as mesmas checagens porque gancho local se desliga com `--no-verify`.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **O que revisar num PR de dados:** idempotência (rodar duas vezes duplica?), chave de MERGE, tratamento de
 #   nulo e de dado atrasado, mudança de contrato, custo (full scan? explode?), teste cobrindo o caso.
@@ -488,12 +488,12 @@ run([sys.executable, "-m", "pytest", "tests/test_foundation.py", "-q", "--color=
 #     assert_df_equality(obtido, esperado, ignore_row_order=True)
 # ```
 #
-# > 🎤 **Resposta de 30 s:** "Muitos testes unitários de funções puras e transformações pequenas com chispa;
+# > **Em resumo:** Muitos testes unitários de funções puras e transformações pequenas com chispa;
 # > alguns de integração com Spark local e Delta de verdade, provando idempotência; testes de dados e contrato
 # > rodando em produção a cada lote; e um ponta a ponta no ambiente dev. O teste de integração custa milhares de
-# > vezes o unitário — por isso a base da pirâmide é larga."
+# > vezes o unitário — por isso a base da pirâmide é larga.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Sessão Spark por suíte** (`scope="session"` no `conftest.py`): subir a JVM custa segundos; uma por teste
 #   tornaria a suíte inviável.
@@ -546,11 +546,11 @@ print("entry_points.txt no wheel?", tem_entry_points)
 #
 # Os dois ajustes vão no `pyproject.toml` (arquivo compartilhado do repositório).
 #
-# > 🎤 **Resposta de 30 s:** "O pipeline é um wheel construído com `uv build` no CI e publicado pelo bundle; o
+# > **Em resumo:** O pipeline é um wheel construído com `uv build` no CI e publicado pelo bundle; o
 # > job chama um entry point do pacote. Cuidado clássico: não declarar `pyspark` como dependência do wheel — no
-# > Databricks o Spark vem do runtime, e reinstalar quebra o cluster."
+# > Databricks o Spark vem do runtime, e reinstalar quebra o cluster.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Lockfile:** `uv.lock` fixa versões para o CI e o laptop; no wheel, só faixas (`>=`), para não brigar com o
 #   runtime. Dependências do runtime se consultam nas *release notes* do DBR.
@@ -698,12 +698,12 @@ else:
 # fossem declaradas como *streaming tables* e *materialized views* com expectations — é o tema do notebook 08.
 # Ter as duas formas para a mesma tabela seria duas fontes da verdade.
 #
-# > 🎤 **Resposta de 30 s:** "O job é código: `databricks.yml` com alvos dev e prod, variáveis e o wheel; o
+# > **Em resumo:** O job é código: `databricks.yml` com alvos dev e prod, variáveis e o wheel; o
 # > job multi-tarefa em `resources/jobs.yml` com dependências, job cluster compartilhado, retries só onde a task é
 # > idempotente, timeout, alerta de duração e agenda. Dev tem prefixo por pessoa e agenda pausada; prod roda como
-# > service principal com permissões explícitas. O CI valida e faz o deploy."
+# > service principal com permissões explícitas. O CI valida e faz o deploy.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Retry só onde é seguro:** bronze (checkpoint) e silver (MERGE) são idempotentes → 2 retries; `quality` tem 0
 #   porque reprovação é sinal, não falha transitória.
@@ -772,12 +772,12 @@ for tag in (f"v{versao_pkg}", "v9.9.9"):
     print(f"tag {tag:<8} × pyproject {versao_pkg} → {'deploy segue' if ok else 'deploy BARRADO'}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "No PR, o CI roda lint, testes com Spark e validação de Terraform e do bundle. Merge na
+# > **Em resumo:** No PR, o CI roda lint, testes com Spark e validação de Terraform e do bundle. Merge na
 # > `main` faz deploy automático em dev; tag semântica faz deploy em prod depois de aprovação no ambiente do GitHub.
 # > A autenticação é OIDC com service principal — nenhum token guardado — e prod roda como service principal,
-# > não como pessoa."
+# > não como pessoa.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que tag e não branch para prod:** a tag é imutável e nomeia exatamente o que foi para produção; rollback
 #   = deploy da tag anterior. (Por isso o alvo `prod` não usa `git.branch: main`: no checkout de uma tag o HEAD
@@ -814,7 +814,7 @@ for tag in (f"v{versao_pkg}", "v9.9.9"):
 # de produção continua sendo o bundle a partir do CI — nunca um job apontando para o Git folder de uma pessoa.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Trunk-based ou GitFlow para um time de dados? Por quê?**
 # <details><summary>Resposta</summary>

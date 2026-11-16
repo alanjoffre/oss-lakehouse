@@ -1,11 +1,11 @@
 # %% [markdown]
-# # 16 · Live coding: SQL e PySpark
+# # 16 · SQL e PySpark: exercícios resolvidos
 #
-# > Prova que os 15 exercícios clássicos de entrevista de dados saem certos **nas duas linguagens** — Spark SQL
-# > e DataFrame API — com um `assert` contra o resultado esperado, e que as mesmas soluções rodam na bronze real
+# > Resolve 15 exercícios clássicos de dados **nas duas linguagens** — Spark SQL e DataFrame API — com um
+# > `assert` contra o resultado esperado, e mostra que as mesmas soluções rodam na bronze real
 # > do GH Archive (~279 mil eventos). Fecha com 3 exercícios de Python puro.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Python avançado | Exercícios 16–18 (sem pandas; arquivo maior que a memória) |
 # | Databricks e processamento de dados | Exercícios 1–15 em Spark SQL **e** PySpark, aplicados à bronze |
@@ -15,13 +15,13 @@
 #
 # **Formato de cada exercício:** Enunciado → dados de exemplo (pequenos, criados na célula) → Solução SQL →
 # Solução PySpark → `assert` provando que as duas batem com o esperado → aplicação na bronze (quando faz sentido)
-# → Pegadinhas / complexidade / como explicar em voz alta.
+# → Pegadinhas / complexidade / raciocínio.
 #
-# ### Como conduzir um live coding (o que o entrevistador avalia)
+# ### Como resolver um exercício de dados
 #
 # 1. **Esclarecer antes de digitar:** grão da tabela, chave, empates, NULL, fuso horário, "e se vier duplicado?".
 # 2. **Montar um exemplo pequeno com o caso de borda** (empate, NULL, intervalo exato) e dizer o resultado esperado.
-# 3. **Solução direta primeiro**, falando em voz alta; depois otimizar.
+# 3. **Solução direta primeiro**, com o raciocínio explícito; depois otimizar.
 # 4. **Testar contra o exemplo** — o `assert` deste notebook é isso.
 # 5. **Falar de custo:** quantos shuffles, o que acontece com 1 bilhão de linhas, onde há skew.
 
@@ -124,13 +124,13 @@ print(f"repositórios distintos: {n_repos:,} | linhas após dedup: {ultimo.count
 ultimo.select("repo.name", "type", "created_at").orderBy(F.col("ts").desc(), "repo.name").show(3, truncate=False)
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - `ROW_NUMBER` e não `RANK`: com empate em `updated_at`, `RANK` devolveria 2 linhas para a mesma chave.
 # - **Sem desempate determinístico** (`seq`, `id`), o resultado muda entre execuções — o pior tipo de bug.
 # - `DISTINCT` não resolve: as linhas diferem em `stars`.
 # - Custo: 1 shuffle por `repo_id` + ordenação dentro de cada partição. `max_by(struct)` evita a ordenação
 #   completa (agregação parcial antes do shuffle) — melhor com muitas versões por chave.
-# - Em voz alta: "particiono pela chave, ordeno do mais novo para o mais velho com desempate, fico com o 1º".
+# - Raciocínio: "particiono pela chave, ordeno do mais novo para o mais velho com desempate, fico com o 1º".
 # - Em produção isso é o passo antes de um `MERGE` (notebook 05): o `MERGE` falha se a origem tiver 2 linhas
 #   para a mesma chave.
 
@@ -186,7 +186,7 @@ spark.sql("""
 """).show()
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - A pergunta certa antes de responder: **"duplicata por qual chave?"**. Na bronze, `id` não repete, mas a
 #   chave natural (ator, repo, tipo, segundo) repete — e isso **não é erro**: um ator pode fazer push em duas
 #   branches, ou criar várias branches, no mesmo segundo. Deduplicar por essa chave apagaria eventos legítimos.
@@ -243,7 +243,7 @@ ranks.groupBy("type").agg(
 ranks.where("type = 'WatchEvent' AND rn <= 3").select("repo", "n", "rk").orderBy("rn").show(truncate=False)
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - `ROW_NUMBER`: exatamente N por grupo (empate decidido pelo desempate — ou ao acaso, se não houver).
 #   `RANK`: empates dividem a posição e **pulam** a seguinte (1, 2, 2, 4). `DENSE_RANK`: não pula (1, 2, 2, 3) —
 #   "top-2 valores distintos" pode devolver muitas linhas.
@@ -252,7 +252,7 @@ ranks.where("type = 'WatchEvent' AND rn <= 3").select("repo", "n", "rk").orderBy
 #   Neste Spark local, `QUALIFY` **junto com** `GROUP BY` falhou (`MISSING_GROUP_BY`); a subquery funciona em
 #   qualquer motor.
 # - Na bronze, com muitos repositórios empatados em 1 evento, `RANK`/`DENSE_RANK` chegam a devolver 176 linhas
-#   num "top-3" (tabela acima) — é exatamente a conversa sobre empate que o entrevistador quer.
+#   num "top-3" (tabela acima) — por isso a regra de empate se decide antes de escrever a consulta.
 # - Custo: 1 shuffle por grupo + ordenação por grupo. Grupo gigante (skew) concentra numa tarefa; para top-N
 #   global, `ORDER BY ... LIMIT N` usa *TakeOrderedAndProject* (top-N parcial por partição, sem ordenar tudo).
 
@@ -320,7 +320,7 @@ spark.sql("""
 """).show(truncate=False)
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - **ROWS** conta linhas físicas; **RANGE** usa o valor da chave de ordenação. Com dia faltando, "média dos 3
 #   últimos dias" é `RANGE`, não `ROWS` (ou preencha o calendário antes com uma dimensão de datas).
 # - Frame padrão com empate soma as linhas empatadas juntas — sempre escreva o frame explicitamente.
@@ -376,8 +376,8 @@ spark.sql("""
 """).show(truncate=False)
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
-# - O 1º evento de cada partição tem `LAG` nulo — decida se é 0, NULL ou "início" e diga isso em voz alta.
+# **Pegadinhas / complexidade / raciocínio**
+# - O 1º evento de cada partição tem `LAG` nulo — decida se é 0, NULL ou "início" e deixe isso explícito.
 # - `LAG(ts, 1, default)` aceita valor padrão; `LAG(ts, 2)` olha 2 linhas atrás.
 # - Diferença de timestamp: `unix_timestamp(a) - unix_timestamp(b)` (segundos) ou `timestampdiff(SECOND, b, a)`.
 # - Custo: 1 shuffle por ator + ordenação. Ator gigante (o `github-actions[bot]`) concentra numa tarefa: skew.
@@ -437,12 +437,12 @@ spark.sql("""
 """).show(truncate=False)
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - **Deduplicar antes** (`DISTINCT actor, d`): 2 eventos no mesmo dia quebram a conta (o `row_number` anda e o
 #   dia não). Use `DENSE_RANK` se preferir não deduplicar.
 # - Funciona com qualquer sequência inteira (minuto, número de versão); com datas, `date_sub`.
 # - Variante "gaps": onde faltam dias → `LEAD(d) - d > 1`.
-# - Custo: 1 shuffle por ator + 1 agregação. Em voz alta: "numero as linhas e subtraio do dia; o que é
+# - Custo: 1 shuffle por ator + 1 agregação. Raciocínio: "numero as linhas e subtraio do dia; o que é
 #   consecutivo fica com a mesma diferença".
 
 # %% [markdown]
@@ -496,7 +496,7 @@ por_sessao.groupBy("is_bot").agg(
 ).show()
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - **Limite exato**: "> 30" ou ">= 30"? Pergunte e teste o caso de 30 min cravados (está no exemplo).
 # - Sessões que **cruzam a meia-noite** ou o limite do lote: em batch diário, a sessão é cortada. Solução:
 #   processar com sobreposição (ler a última hora do dia anterior) ou sessionizar em streaming com
@@ -563,7 +563,7 @@ api = cand.withColumn("rn", F.row_number().over(w)).where("rn = 1").select("e.re
 confere(sql, api, esperado)
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - **Intervalo semiaberto** `[from, to)`: com `BETWEEN` (fechado dos dois lados), o evento do dia da mudança casa
 #   com 2 versões e duplica a linha do fato.
 # - `valid_to` nulo para a versão atual: `COALESCE` com uma data "infinita" (ou grave `9999-12-31` direto).
@@ -618,7 +618,7 @@ spark.sql("""
 """).show()
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - **Liste os valores do pivot** (`IN (...)` / `pivot(col, [valores])`): sem a lista, o Spark roda um job extra
 #   para descobrir os valores distintos, e a quantidade de colunas passa a depender do dado (schema instável).
 # - SQL `UNPIVOT` exclui NULL por padrão (`INCLUDE NULLS` para manter); `DataFrame.unpivot` mantém — os dois
@@ -667,7 +667,7 @@ print(f"IssuesEvent: {total_issues:,}")
 labels.orderBy(F.desc("count"), "label").show(6, truncate=False)
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - `explode` **descarta** linhas com array vazio ou nulo; `explode_outer`/`posexplode_outer` mantêm.
 # - `from_json` com JSON inválido devolve NULL silenciosamente (modo PERMISSIVE) — conte os nulos depois.
 # - Schema explícito no `from_json` (`schema_of_json` ajuda a descobrir). No Databricks, com a coluna como
@@ -709,7 +709,7 @@ print(f"repos com estrela: {watch.count():,} | sem push: {watch.join(push, 'rid'
       f"com push: {watch.join(push, 'rid', 'left_semi').count():,}")
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - `x NOT IN (lista com NULL)` vira `x <> NULL AND ...` → desconhecido → **nenhuma linha**. Isso é SQL padrão
 #   (lógica de 3 valores), não bug do Spark. Use `NOT EXISTS` ou `LEFT ANTI JOIN`.
 # - Semi-join devolve cada linha da esquerda **no máximo uma vez**; inner join duplica quando a direita repete.
@@ -761,9 +761,9 @@ pct_gha = bronze.agg(F.round(100 * F.avg((F.col("actor.login") == "github-action
 print(f"eventos de bots: {pct_bot}% | só github-actions[bot]: {pct_gha}%")
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - **Divisão inteira:** no Spark `/` devolve double; no SQL Server e no Postgres, `int / int` trunca (4/10 = 0).
-#   Multiplique por `100.0` ou faça `CAST` — fale isso, mostra experiência com vários motores.
+#   Multiplique por `100.0` ou faça `CAST` antes de dividir; a regra muda entre motores.
 # - `SUM(...) OVER ()` sem partição joga tudo numa partição: agregue antes (como na bronze) ou faça `CROSS JOIN`
 #   com o total calculado à parte.
 # - Arredondar antes de somar faz o total dar 99,9% ou 100,1% — arredonde só na apresentação.
@@ -806,14 +806,14 @@ for nome, expr in [("exato", F.percentile("bytes", [0.5, 0.9, 0.99])),
     print(f"{nome}: p50/p90/p99 = {[int(x) for x in r]}  ({time.perf_counter() - t0:.2f}s)")
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - `percentile` (exato) interpola: mediana de [1,2,3,4,100,200] = 3,5. `percentile_approx` devolve **um
 #   elemento do conjunto** (3) — com par de valores, não bate com a mediana "de livro".
 # - O exato guarda **todos os valores** de cada grupo na memória: com bilhões de linhas, OOM ou lentidão.
 #   O aproximado usa um resumo de tamanho fixo (algoritmo de Greenwald-Khanna) controlado por `accuracy`
 #   (padrão 10.000: erro relativo de rank ~1/10.000).
 # - `median()` existe no Spark 3.4+ e no Databricks SQL (exato).
-# - Em voz alta: "para dashboard e SLA uso o aproximado; para fechamento financeiro, exato — e conto o custo".
+# - Raciocínio: "para dashboard e SLA uso o aproximado; para fechamento financeiro, exato — e conto o custo".
 
 # %% [markdown]
 # ## 14. Coorte de retenção 🧪
@@ -874,7 +874,7 @@ spark.sql("""
 """).show()
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - **Defina "ativo"** (qualquer evento? só login?) e a **granularidade** (semana ISO começa na segunda —
 #   `date_trunc('week')` do Spark também).
 # - **Censura à direita:** a coorte mais nova ainda não teve tempo de chegar à semana 2 — célula vazia não é
@@ -939,7 +939,7 @@ spark.sql("""
 """).show()
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - O subtotal aparece como NULL — **igual** a um NULL de verdade no dado. `GROUPING(col)` (1 = linha de
 #   subtotal) desfaz a ambiguidade; `GROUPING_ID` codifica o nível em bits.
 # - `ROLLUP(a, b)` = conjuntos (a,b), (a), () — hierárquico. `CUBE(a, b)` = todas as combinações (2ⁿ).
@@ -987,7 +987,7 @@ print("ok:", len(casos), "casos")
 #     return merged
 # ```
 #
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - Ordenar por início é o passo-chave; depois uma passada linear. Total O(n log n), memória O(n).
 # - Pergunte: intervalos **fechados ou semiabertos**? `(1,4)` e `(4,5)` se unem se forem fechados; com `[1,4)` e
 #   `[4,5)` também (encostam), mas `[1,4)` e `[5,6)` não.
@@ -1026,7 +1026,7 @@ for repo, n in top5:
     print(f"  {n:5,}  {repo}  ({len(atores_por_repo[repo])} atores distintos)")
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - `Counter` é um dict: memória O(chaves distintas), não O(linhas). `defaultdict(set)` evita o
 #   `if chave not in d`.
 # - Top-K: `Counter.most_common(k)` ou `heapq.nsmallest(k, ..., key=(-n, chave))` — O(n log k), sem ordenar tudo.
@@ -1095,7 +1095,7 @@ for login, n in externo:
     print(f"  {n:6,}  {login}")
 
 # %% [markdown]
-# **Pegadinhas / complexidade / como explicar em voz alta**
+# **Pegadinhas / complexidade / raciocínio**
 # - Primeira pergunta: **o que não cabe — as linhas ou as chaves distintas?** Se só as linhas não cabem, um
 #   generator + `Counter` resolve (memória O(chaves)). Se as chaves não cabem, particione em disco por hash.
 # - `hash()` do Python **muda a cada processo** (`PYTHONHASHSEED`): use `zlib.crc32`/`hashlib` para particionar.
@@ -1121,11 +1121,11 @@ for login, n in externo:
 # SELECT ai_classify(title, ARRAY('bug', 'feature', 'docs')) FROM silver.issues;
 # ```
 #
-# - Em entrevista com o editor do Databricks, as mesmas soluções valem; o `display(df)` substitui o `show()`.
+# - No editor do Databricks, as mesmas soluções valem; o `display(df)` substitui o `show()`.
 # - Photon acelera janelas, agregações e joins sem mudar o código — mas não UDF Python.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. `ROW_NUMBER`, `RANK` ou `DENSE_RANK` para top-N?**
 # <details><summary>Resposta</summary>

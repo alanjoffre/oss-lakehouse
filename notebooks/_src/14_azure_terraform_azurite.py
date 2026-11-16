@@ -13,7 +13,7 @@
 # > descrita em Terraform **validado**, e o caminho do dado até o Blob Storage exercitado de verdade, offline, no
 # > emulador Azurite: SDK, SAS de menor privilégio e Spark gravando **Delta via `abfs://`**.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Microsoft Azure | ADLS Gen2 (HNS), Access Connector + identidade gerenciada, RBAC, Key Vault, rede, custos |
 # | Databricks | workspace premium, Unity Catalog (storage credential, external location, catálogo, grants), cluster policy |
@@ -86,7 +86,7 @@ def sh(cmd, cwd=TF_DIR, timeout=300):
 #              schemas bronze/silver/gold · grants por grupo · cluster policy · secret scope "kv"
 # ```
 #
-# **Por que importa.** Em entrevista de sênior a pergunta não é "você sabe criar um cluster?", e sim "quem acessa
+# **Por que importa.** A pergunta de arquitetura não é "como criar um cluster?", e sim "quem acessa
 # o storage, com qual identidade, por qual rede, e quanto custa?". Cada caixa acima responde uma dessas.
 #
 # **Como funciona.** Os recursos declarados, lidos dos próprios `.tf`:
@@ -107,12 +107,12 @@ print(len(resources), "recursos em", len({f for f, _, _ in resources}), "arquivo
 # (`uc-managed`), porque o UC não permite sobrepor caminho de tabela externa e de tabela gerenciada; e **ambientes**
 # (dev/prod) em contas diferentes — raio de impacto (*blast radius*) e custo separados.
 #
-# > 🎤 **Resposta de 30 s:** "Na Azure, o lakehouse é: ADLS Gen2 com namespace hierárquico, acessado pelo Unity
+# > **Em resumo:** Na Azure, o lakehouse é: ADLS Gen2 com namespace hierárquico, acessado pelo Unity
 # > Catalog através de um Access Connector com identidade gerenciada — sem segredo; Key Vault para o que ainda é
 # > segredo; workspace premium por causa do UC; tudo em Terraform, um estado por ambiente, e tags em tudo para
-# > separar custo."
+# > separar custo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Metastore do UC é regional** e, para workspaces novos, criado/atribuído automaticamente; por isso o
 #   Terraform não cria metastore — só os objetos dentro dele.
@@ -181,11 +181,11 @@ if Path(TERRAFORM).exists():
 # Num pipeline real, o CI autentica por **OIDC** (identidade federada do GitHub Actions no Entra ID — sem segredo
 # guardado), roda `plan`, publica o plano no PR e só aplica depois da aprovação.
 #
-# > 🎤 **Resposta de 30 s:** "Terraform com versões de provider fixadas, um estado remoto por ambiente com lock, e
+# > **Em resumo:** Terraform com versões de provider fixadas, um estado remoto por ambiente com lock, e
 # > o mesmo código para dev e prod mudando só o tfvars. No PR roda fmt, validate e plan; o apply é do pipeline,
-# > autenticado por OIDC — ninguém aplica do laptop."
+# > autenticado por OIDC — ninguém aplica do laptop.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Estado** contém segredos e IDs: fica num Storage Account dedicado (backend `azurerm`, ver `backend.tf`), com
 #   lock por *lease* de blob, versionamento e acesso restrito.
@@ -308,11 +308,11 @@ if AZURITE:
         print("escrever com a SAS:", exc.status_code, exc.error_code)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Prefiro identidade gerenciada a qualquer segredo: no Databricks com UC, o Access
+# > **Em resumo:** Prefiro identidade gerenciada a qualquer segredo: no Databricks com UC, o Access
 # > Connector acessa o storage e eu dou grant no catálogo. SAS só para compartilhar algo pontual, com escopo mínimo
-# > e prazo curto — de preferência user delegation SAS. Chave da conta eu desligo."
+# > e prazo curto — de preferência user delegation SAS. Chave da conta eu desligo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - `sp` = permissões, `se` = expiração, `sig` = assinatura HMAC com a chave — quem tem a chave fabrica qualquer SAS;
 #   por isso *user delegation SAS* (assinada com credencial Entra ID, revogável) é a forma recomendada.
@@ -416,11 +416,11 @@ if SPARK_AZ:
 # - o endpoint **DFS** com HNS (rename atômico de diretório, ACLs POSIX) — o Azurite não emula ADLS Gen2;
 # - autenticação OAuth/identidade gerenciada — aqui é a chave pública do emulador.
 #
-# > 🎤 **Resposta de 30 s:** "No Databricks o caminho é `abfss://container@conta.dfs.core.windows.net`, driver ABFS,
+# > **Em resumo:** No Databricks o caminho é `abfss://container@conta.dfs.core.windows.net`, driver ABFS,
 # > identidade do Unity Catalog. Localmente eu exercito o mesmo driver contra o Azurite — no Hadoop 3.5 o WASB foi
-# > removido e o ABFS fala com conta sem HNS pelo endpoint Blob. Testo o código; a política de acesso, só na nuvem."
+# > removido e o ABFS fala com conta sem HNS pelo endpoint Blob. Testo o código; a política de acesso, só na nuvem.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Delta em object storage**: o commit do Delta usa "put-if-absent" do arquivo de log; no ADLS isso é atômico,
 #   por isso múltiplos escritores são seguros. (Em S3 era preciso um *LogStore* com DynamoDB até o S3 ganhar
@@ -489,11 +489,11 @@ for label, pattern in checks.items():
 # para as VMs e para o uso de DBU — é assim que o Cost Management e as *system tables* de billing separam por
 # projeto (notebook 15).
 #
-# > 🎤 **Resposta de 30 s:** "Rede: VNet injection, nós sem IP público, private endpoint para storage e Key Vault,
+# > **Em resumo:** Rede: VNet injection, nós sem IP público, private endpoint para storage e Key Vault,
 # > acesso público desligado em prod. Segredo: Key Vault com secret scope, e o que der vira identidade gerenciada.
-# > Custo: DBU e VM são o grosso — cluster policy com limite, autodesligamento e tags obrigatórias."
+# > Custo: DBU e VM são o grosso — cluster policy com limite, autodesligamento e tags obrigatórias.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Serverless compute roda no plano de dados **da Databricks**: o acesso ao seu storage privado passa por
 #   *network connectivity configuration* (NCC) e private endpoints gerenciados — outro desenho de rede.
@@ -538,7 +538,7 @@ for label, pattern in checks.items():
 # ```
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Por que ADLS Gen2 e não Blob Storage comum para o lakehouse?**
 # <details><summary>Resposta</summary>

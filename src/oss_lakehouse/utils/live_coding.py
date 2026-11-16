@@ -1,4 +1,4 @@
-"""Soluções reaproveitáveis dos exercícios clássicos de entrevista (notebook 16).
+"""Soluções reaproveitáveis dos exercícios clássicos de SQL, PySpark e Python (notebook 16).
 
 Python puro: merge de intervalos, contagem/top-K sem pandas, top-K de arquivo maior que a
 memória (agregação externa por hash). PySpark: deduplicar mantendo o mais recente,

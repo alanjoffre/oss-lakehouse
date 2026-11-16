@@ -13,7 +13,7 @@
 # > duplica, o checkpoint guarda o que já foi visto — e mostra onde isso **deixa de valer** (checkpoint
 # > perdido, registro corrompido lido em silêncio) e como o Auto Loader resolve no Databricks.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Python avançado | download idempotente/atômico com retry (`oss_lakehouse.sources.gharchive`) |
 # | Databricks e processamento de dados | Auto Loader (`cloudFiles`), schema evolution, rescued data ☁️ |
@@ -81,11 +81,11 @@ novos = gharchive.download_hours(datetime(2026, 10, 1, 10), datetime(2026, 10, 1
 print("baixados agora:", novos, "| na landing:", sorted(p.name for p in LANDING.iterdir()))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "O download é idempotente — pula o que já existe — e atômico — escreve em `.tmp`
+# > **Em resumo:** O download é idempotente — pula o que já existe — e atômico — escreve em `.tmp`
 # > e renomeia, então quem observa a pasta nunca vê arquivo pela metade. Com retry exponencial com jitter
-# > para falha de rede. Reexecutar o job é sempre seguro."
+# > para falha de rede. Reexecutar o job é sempre seguro.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **`rename` atômico depende do storage**: em disco local e no **ADLS Gen2 com namespace hierárquico** é
 #   atômico; em Blob Storage "plano" ou S3, renomear é copiar + apagar. Lá o padrão é escrever numa pasta de
@@ -182,12 +182,12 @@ for commit in sorted((Path(BRONZE) / "_delta_log").glob("*.json")):
 # foi commitado e ignora a escrita. **Checkpoint (fonte reproduzível) + sink idempotente = exactly-once**
 # (*exatamente uma vez*, de ponta a ponta).
 #
-# > 🎤 **Resposta de 30 s:** "Ingestão de arquivo incremental: stream com checkpoint e `availableNow`, agendado
+# > **Em resumo:** Ingestão de arquivo incremental: stream com checkpoint e `availableNow`, agendado
 # > como job. O checkpoint registra os arquivos vistos e o lote em curso — offset antes, commit depois. Se cair
 # > no meio, o lote é refeito com os mesmos arquivos, e o sink Delta ignora o lote repetido pelo `txn` no log.
-# > Por isso é exactly-once: fonte reproduzível mais sink idempotente."
+# > Por isso é exactly-once: fonte reproduzível mais sink idempotente.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **`availableNow` × `once`**: `once` processa tudo em **um** lote (pode estourar memória num backlog);
 #   `availableNow` respeita `maxFilesPerTrigger`/`maxBytesPerTrigger` e faz vários lotes.
@@ -232,11 +232,11 @@ print("schema gravado no Delta:", spark.read.format("delta").load(var_path).sche
 # %% [markdown]
 # `try_variant_get` devolve NULL quando o tipo não converte (`ref` não é número) em vez de falhar.
 #
-# > 🎤 **Resposta de 30 s:** "Envelope com schema explícito, payload como string JSON na bronze — a bronze não
+# > **Em resumo:** Envelope com schema explícito, payload como string JSON na bronze — a bronze não
 # > interpreta, guarda. Na plataforma nova eu usaria VARIANT: guarda o JSON já em formato binário navegável,
-# > leitura por caminho sem reparsear, e o Delta grava o tipo nativamente. Testei aqui no Spark 4.2 + Delta 4.4."
+# > leitura por caminho sem reparsear, e o Delta grava o tipo nativamente. Testei aqui no Spark 4.2 + Delta 4.4.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **VARIANT × string JSON**: string reparseia a cada leitura (`from_json`/`get_json_object`); VARIANT é
 #   parseado uma vez na escrita e o Databricks ainda faz *shredding* (extrai campos frequentes em colunas
@@ -316,12 +316,12 @@ print("tem _rescued_data?", "_rescued_data" in r.columns, "| linhas:", r.count()
 #   continua utilizável.
 # - `badRecordsPath` → linhas/arquivos ilegíveis são gravados num caminho de exceções, com o motivo.
 #
-# > 🎤 **Resposta de 30 s:** "Com schema explícito, o risco é perder dado calado: PERMISSIVE sem coluna de
+# > **Em resumo:** Com schema explícito, o risco é perder dado calado: PERMISSIVE sem coluna de
 # > corrupção transforma JSON quebrado em linha nula, e campo novo some. Localmente eu ponho `_corrupt_record`
 # > no schema e monitoro. No Databricks, Auto Loader com `rescuedDataColumn` guarda tudo que não casou, e
-# > `badRecordsPath` separa o ilegível."
+# > `badRecordsPath` separa o ilegível.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Correção para a bronze daqui**: incluir `_corrupt_record` no `GH_EVENT_SCHEMA` (ou na leitura) e uma
 #   expectation `_corrupt_record IS NULL` com ação warn/quarentena (notebook 08).
@@ -385,12 +385,12 @@ print("tem _rescued_data?", "_rescued_data" in r.columns, "| linhas:", r.count()
 # Recente: com **file events** habilitados na *external location* do Unity Catalog, o Auto Loader usa
 # notificações gerenciadas pelo Databricks (`cloudFiles.useManagedFileEvents`) sem cada stream criar a sua fila.
 #
-# > 🎤 **Resposta de 30 s:** "Auto Loader é o `cloudFiles`: mesmo checkpoint e `availableNow`, mas com RocksDB
+# > **Em resumo:** Auto Loader é o `cloudFiles`: mesmo checkpoint e `availableNow`, mas com RocksDB
 # > guardando os arquivos vistos, schema inferido e versionado no `schemaLocation`, evolução por
 # > `schemaEvolutionMode` e `rescuedDataColumn` para não perder nada. Para muitos arquivos, troco directory
-# > listing por file notification — na Azure, Event Grid entregando numa fila do Storage."
+# > listing por file notification — na Azure, Event Grid entregando numa fila do Storage.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Notificação perde evento?** Pode atrasar/perder raramente; `cloudFiles.backfillInterval` (ex.: `1 day`)
 #   faz um listing periódico de segurança.
@@ -437,11 +437,11 @@ print("ids duplicados:", f"{dups:,}")
 #    `modifiedAfter`/`modifiedBefore` para recortar por data de modificação; `cloudFiles.backfillInterval` para
 #    pegar arquivos que a notificação perdeu.
 #
-# > 🎤 **Resposta de 30 s:** "Exactly-once vale enquanto o checkpoint existe. Para backfill eu não confio em
+# > **Em resumo:** Exactly-once vale enquanto o checkpoint existe. Para backfill eu não confio em
 # > apagar checkpoint: ou a camada seguinte é idempotente (MERGE por chave), ou faço um batch que regrava só o
-# > intervalo com `replaceWhere`, que é atômico. Mostrei aqui: checkpoint novo no mesmo alvo duplicou tudo."
+# > intervalo com `replaceWhere`, que é atômico. Mostrei aqui: checkpoint novo no mesmo alvo duplicou tudo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Backfill grande junto com a carga do dia**: rode o backfill como stream separado (checkpoint e
 #   `maxFilesPerTrigger` próprios) para não atrasar o dado novo; o destino idempotente aceita os dois.
@@ -482,10 +482,10 @@ print("ids duplicados:", f"{dups:,}")
 #
 # Ambos são idempotentes por arquivo: rodar de novo não recarrega o que já entrou.
 #
-# > 🎤 **Resposta de 30 s:** "Os dois carregam cada arquivo uma vez. `COPY INTO` é SQL, simples, bom para
+# > **Em resumo:** Os dois carregam cada arquivo uma vez. `COPY INTO` é SQL, simples, bom para
 # > milhares de arquivos e carga pontual. Auto Loader é stream com checkpoint, escala para milhões com file
 # > notification e trata evolução de schema — é o padrão para ingestão contínua. Em pipeline novo no
-# > Databricks eu começo pelo Auto Loader (ou `read_files` numa streaming table)."
+# > Databricks eu começo pelo Auto Loader (ou `read_files` numa streaming table).
 #
 # **Trade-offs** — `COPY INTO` guarda o estado na própria tabela (recriou a tabela, recarrega tudo) e fica
 # lento para listar diretórios enormes; Auto Loader exige cuidar do checkpoint e do `schemaLocation`.
@@ -502,7 +502,7 @@ print("ids duplicados:", f"{dups:,}")
 # - **Lakeflow Connect**: conectores gerenciados (SQL Server, Salesforce, SharePoint…) quando a fonte não é arquivo.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Como você garante que um arquivo é processado exatamente uma vez?**
 # <details><summary>Resposta</summary>

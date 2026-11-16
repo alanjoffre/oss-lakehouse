@@ -14,14 +14,14 @@
 # > de `VACUUM` (e de `REORG ... PURGE`, se houver deletion vectors); (3) o que o Unity Catalog faz por política
 # > declarativa e o que continua sendo trabalho do pipeline.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | §1–§3 (Unity Catalog, managed × external, grants), §8 (row filter, column mask, ABAC), §9 (lineage, auditoria, sharing) |
 # | Microsoft Azure | §2 (Access Connector, storage credential, external location), §5 (Key Vault), §13 (soft delete do ADLS), seção ☁️ |
 # | Arquitetura e desenvolvimento de pipelines | §4 (classificação como metadado), §9 (isolamento de ambientes), §13 (propagação do esquecimento) |
 # | Python avançado | `src/oss_lakehouse/governance.py` — HMAC só com funções nativas do Spark, política como dado, testes |
 # | IA aplicada à engenharia de dados | §7 (`limpar_texto_livre`, `mascara_formato_py`: o que o notebook 12 usa antes de mandar dado a um LLM) |
-# | Times ágeis multidisciplinares | §14 (engenheiro de dados × DPO/encarregado × segurança × dono do dado) |
+# | Papéis na governança | §14 (engenheiro de dados × DPO/encarregado × segurança × dono do dado) |
 #
 # Legenda: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui)
 #
@@ -199,12 +199,12 @@ for sql in (
 # é a transformação do dado (§5–§8) e o comportamento do Delta (§11–§13). O resto deste notebook marca ☁️ o que
 # só existe na plataforma.
 #
-# > 🎤 **Resposta de 30 s:** "Unity Catalog é a governança central do Databricks, no nível da conta. A hierarquia
+# > **Em resumo:** Unity Catalog é a governança central do Databricks, no nível da conta. A hierarquia
 # > é metastore, catalog, schema e objeto — tabela, view, volume, função, modelo — e todo objeto tem nome de três
 # > níveis. Permissão, tag, linhagem e auditoria ficam num lugar só e valem em todos os workspaces ligados ao
-# > metastore. Um metastore por região; eu separo ambiente e domínio por catálogo."
+# > metastore. Um metastore por região; eu separo ambiente e domínio por catálogo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **`hive_metastore`**: o catálogo legado aparece no UC como um catálogo à parte, sem as garantias do UC.
 #   Migração: `SYNC`, `CREATE TABLE ... DEEP CLONE` ou o projeto UCX. *Hive Metastore Federation* expõe o legado
@@ -257,7 +257,7 @@ print(f"  titular ainda legível na externa: {spark.read.format('delta').load(st
 # O `DROP` da externa removeu o registro do catálogo e deixou o parquet — com o titular dentro — legível por
 # qualquer um com acesso à pasta.
 #
-# **No Unity Catalog ☁️** a regra é a mesma, com três diferenças que caem em entrevista:
+# **No Unity Catalog ☁️** a regra é a mesma, com três diferenças que importam:
 #
 # | | Managed (UC) | External (UC) |
 # |---|---|---|
@@ -290,13 +290,13 @@ print(f"  titular ainda legível na externa: {spark.read.format('delta').load(st
 # CREATE EXTERNAL VOLUME prod.landing.gharchive LOCATION 'abfss://landing@stlakeprod.dfs.core.windows.net/gharchive';
 # ```
 #
-# > 🎤 **Resposta de 30 s:** "Managed: o Unity Catalog é dono dos arquivos, o DROP apaga o dado — com janela de
+# > **Em resumo:** Managed: o Unity Catalog é dono dos arquivos, o DROP apaga o dado — com janela de
 # > UNDROP de 7 dias — e a plataforma faz a manutenção. External: eu informo o caminho e o DROP só tira o
 # > registro. O padrão é managed; external só quando outro sistema precisa do mesmo caminho. O acesso ao ADLS é
 # > por storage credential, que embrulha a identidade gerenciada do Access Connector, e external location, que
-# > é o caminho mais a credencial. Ninguém recebe chave de storage."
+# > é o caminho mais a credencial. Ninguém recebe chave de storage.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Sobreposição de caminhos**: o UC não deixa duas external locations (ou uma location e um managed storage)
 #   se sobreporem — cada caminho tem um único dono de governança.
@@ -379,12 +379,12 @@ print(f"  titular ainda legível na externa: {spark.read.format('delta').load(st
 # permissão no laptop sem mentir; o que este repositório faz é **versionar** os grants (Terraform, notebook 14)
 # para que eles passem por pull request como qualquer código.
 #
-# > 🎤 **Resposta de 30 s:** "Privilégio é aditivo e herda para baixo: dou SELECT no schema e ele vale para as
+# > **Em resumo:** Privilégio é aditivo e herda para baixo: dou SELECT no schema e ele vale para as
 # > tabelas atuais e futuras. USE CATALOG e USE SCHEMA são pré-requisito, não dão dado. Eu concedo sempre a
 # > grupo de conta, que vem do Entra ID por SCIM; job roda como service principal com o mínimo — lê a camada
-# > anterior, escreve na sua; dono de objeto é grupo. E os grants ficam em Terraform, revisados em PR."
+# > anterior, escreve na sua; dono de objeto é grupo. E os grants ficam em Terraform, revisados em PR.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Não existe `DENY` no `GRANT`**: como é aditivo, tira-se acesso revogando ou não concedendo. Consequência:
 #   `GRANT SELECT ON CATALOG` é difícil de "furar" para uma tabela sensível — a tabela sensível vai para outro
@@ -481,13 +481,13 @@ for linha in g.sql_tags_uc("prod.bronze.gh_events", g.POLITICA_GH_EVENTS)[1:5]:
 # permitidos e controle de quem pode atribuir. Só tag governada pode ser usada em política ABAC — faz sentido:
 # se a tag decide quem vê o dado, quem pode mudar a tag tem de ser controlado.
 #
-# > 🎤 **Resposta de 30 s:** "Classifico por coluna em quatro níveis — público, interno, confidencial, restrito —
+# > **Em resumo:** Classifico por coluna em quatro níveis — público, interno, confidencial, restrito —
 # > e marco o que é dado pessoal. A política fica em código, versionada, e gera o metadado: local, comentário de
 # > coluna e propriedade de tabela Delta; no Unity Catalog, tags. Tag governada tem valores controlados na conta
 # > e é o que alimenta política ABAC: taguei a coluna como PII, a máscara vale sozinha. Sem classificação não dá
-# > nem para responder onde está o dado de um titular."
+# > nem para responder onde está o dado de um titular.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Classificação automática**: o Databricks tem *data classification* que sugere tags de PII por amostragem;
 #   é ponto de partida, não substitui revisão. O notebook 12 mostra a versão com LLM — que recebe a amostra já
@@ -630,13 +630,13 @@ print("HMAC nativo do Spark == hmac do Python:", publicado.where(F.col("login_hm
 # `hmac_sha256` é escrita só com funções nativas (`sha2`, `concat`, `unhex`): o cálculo roda na JVM. A
 # alternativa óbvia — uma UDF Python com `hmac.new` — serializa cada linha entre JVM e Python.
 #
-# > 🎤 **Resposta de 30 s:** "Hash sem sal não protege identificador: o atacante faz o hash da lista de
+# > **Em resumo:** Hash sem sal não protege identificador: o atacante faz o hash da lista de
 # > candidatos e dá um join — é o ataque de dicionário, e para login, CPF, e-mail e telefone a lista existe ou
 # > é enumerável. Eu uso HMAC-SHA256 com chave guardada no Key Vault: continua determinístico, então serve de
 # > chave de junção, e sem a chave não reverte. E deixo claro que isso é pseudonimização, não anonimização: quem
-# > tem a chave reidentifica, então o dado segue sendo pessoal na LGPD."
+# > tem a chave reidentifica, então o dado segue sendo pessoal na LGPD.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **"E se eu puser um sal?"** Sal **global e conhecido** (no código, no repositório) não muda nada: o atacante
 #   concatena o sal. Sal **secreto** é uma chave mal usada — `sha256(sal || valor)` é vulnerável a ataque de
@@ -672,8 +672,8 @@ print("HMAC nativo do Spark == hmac do Python:", publicado.where(F.col("login_hm
 # | **Criptografia** | `AES-256-GCM(chave, valor)` | sim, por quem tem a chave | não (cada cifra é diferente) | guardar o valor; crypto-shredding (§13) |
 # | **Generalização** | trocar o valor por uma faixa (idade → faixa, segundo → hora) | não | não | publicação, estatística |
 #
-# **Por que importa** — A pergunta de entrevista é "qual você usaria?" e a resposta certa começa com "depende de
-# quem precisa reverter".
+# **Por que importa** — A pergunta é "qual usar?" e a resposta certa começa com "depende de quem precisa
+# reverter".
 #
 # **Como funciona: tokenização.** O token não é *calculado* a partir do valor — é sorteado e a correspondência
 # fica numa tabela. Sem o cofre, o token não carrega informação nenhuma; não há o que atacar com dicionário.
@@ -752,13 +752,13 @@ print("\n".join(linhas))
 # responde quase nenhuma pergunta de negócio. É o **trade-off de utilidade**: não existe anonimização útil de
 # graça, e o k se **mede** — não se supõe.
 #
-# > 🎤 **Resposta de 30 s:** "Depende de quem precisa reverter. Ninguém: HMAC com chave, que ainda serve para
+# > **Em resumo:** Depende de quem precisa reverter. Ninguém: HMAC com chave, que ainda serve para
 # > junção. Um time específico, com auditoria: tokenização, com o cofre separado e de acesso restrito. Preciso
 # > guardar o valor: criptografia AES-GCM, com a chave no Key Vault — sabendo que a cifra não serve para join.
 # > Para publicar dado: generalização e supressão até atingir um k mínimo, medindo o k, porque tirar o nome não
-# > anonimiza — os quase-identificadores reidentificam."
+# > anonimiza — os quase-identificadores reidentificam.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Limites do k-anonimato**: se todas as k pessoas do grupo têm o mesmo atributo sensível, o grupo o revela
 #   (*homogeneity attack*) — daí *l-diversity* e *t-closeness*. E o k é medido contra a própria tabela: uma base
@@ -843,12 +843,12 @@ print("\nespelho Python da máscara de formato:", g.mascara_formato_py("Ana.Souz
 # inevitável. Texto livre com dado pessoal se trata como rede de proteção, não como garantia — e por isso a
 # política do §4 manda **remover** o `payload` para quem não tem acesso aberto.
 #
-# > 🎤 **Resposta de 30 s:** "Máscara é para exibição: mostra o mínimo para a tarefa — últimos dígitos, domínio
+# > **Em resumo:** Máscara é para exibição: mostra o mínimo para a tarefa — últimos dígitos, domínio
 # > do e-mail — e não serve de chave de junção. Faço com função nativa, falhando fechado: o que a função não
 # > reconhece sai todo mascarado. E separo os conceitos: máscara reduz exposição, pseudonimização permite
-# > análise, e nenhuma das duas é anonimização."
+# > análise, e nenhuma das duas é anonimização.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Máscara estática × dinâmica**: estática grava o dado já mascarado (cópia para dev/QA); dinâmica aplica na
 #   leitura conforme quem consulta (§8). Ambiente de desenvolvimento pede estática — dado real mascarado em dev
@@ -1019,7 +1019,7 @@ print("colunas entregues ao analista:", analista.columns)
 # doc para regra que vale em muitas tabelas. Continuam em **Beta**: política no nível do **metastore**,
 # políticas `DENY` e política sobre **views**. Exige serverless ou Databricks Runtime **16.4+** (em compute
 # *dedicated*, com a filtragem fina habilitada); runtime mais antigo **não lê** tabela protegida por ABAC.
-# Confira a página antes da entrevista — este é o recurso que mais mudou em 2025–2026.
+# Confira a página da documentação antes de usar — este é o recurso que mais mudou em 2025–2026.
 #
 # | | Dynamic view | Row filter / column mask na tabela | Política ABAC |
 # |---|---|---|---|
@@ -1029,14 +1029,14 @@ print("colunas entregues ao analista:", analista.columns)
 # | Nome que o usuário consulta | o da view (outro objeto) | o da própria tabela | o da própria tabela |
 # | Melhor uso | expor um recorte curado, com join/transformação | regra específica de uma tabela | regra corporativa ("toda PII é mascarada") |
 #
-# > 🎤 **Resposta de 30 s:** "São três gerações do mesmo controle. Dynamic view: um CASE WHEN com
+# > **Em resumo:** São três gerações do mesmo controle. Dynamic view: um CASE WHEN com
 # > is_account_group_member, e o usuário só tem grant na view. Row filter e column mask: funções SQL presas à
 # > tabela com ALTER TABLE — o usuário consulta a tabela e a regra vai junto. ABAC: política no catálogo ou no
 # > schema, casada por tag governada — taguei a coluna como PII e a máscara vale em qualquer tabela, inclusive
 # > nas futuras. Para regra corporativa eu vou de ABAC; a identidade do pipeline entra no EXCEPT, senão a silver
-# > é gravada já mascarada."
+# > é gravada já mascarada.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **O pipeline também é "usuário"**: se o service principal que lê a bronze cair na máscara, ele grava a
 #   silver **mascarada para sempre**. O mesmo vale para materialized views e streaming tables, que são
@@ -1140,8 +1140,8 @@ print("colunas entregues ao analista:", analista.columns)
 # ```
 #
 # **Nome:** na documentação do Azure Databricks de setembro de 2026 o recurso aparece como **OpenSharing**
-# (o protocolo e o projeto open source foram renomeados; o repositório continua em `go.delta.io/sharing`). Em
-# entrevista os dois nomes aparecem — é a mesma coisa. Para LGPD, compartilhar é **uso compartilhado** de dado
+# (o protocolo e o projeto open source foram renomeados; o repositório continua em `go.delta.io/sharing`). Na
+# documentação e em artigos os dois nomes aparecem — é a mesma coisa. Para LGPD, compartilhar é **uso compartilhado** de dado
 # (o titular tem direito de saber com quem, art. 18 VII): compartilhe a gold agregada, não a bronze.
 #
 # **Isolamento de ambientes** — duas decisões independentes:
@@ -1162,14 +1162,14 @@ print("colunas entregues ao analista:", analista.columns)
 # ALTER CATALOG prod SET ISOLATION MODE ISOLATED;   -- deixa de ser acessível a todos os workspaces do metastore
 # ```
 #
-# > 🎤 **Resposta de 30 s:** "Lineage e auditoria são system tables: system.access.table_lineage e
+# > **Em resumo:** Lineage e auditoria são system tables: system.access.table_lineage e
 # > column_lineage me dizem para onde o dado foi, system.access.audit diz quem acessou e quem mudou permissão.
 # > É com lineage que eu monto a lista de tabelas de um pedido de eliminação. Ambiente eu isolo em dois eixos:
 # > workspace por ambiente para computação e rede, catálogo por ambiente para dado, com binding para o catálogo
 # > de produção só existir no workspace de produção. E compartilhamento externo é Delta Sharing, sem cópia, só
-# > de dado agregado."
+# > de dado agregado.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Lineage tem buracos**: só captura o que passa pelo UC. Leitura por caminho, `collect()` seguido de escrita
 #   em outro sistema, exportação para planilha — nada disso aparece. Lineage é ponto de partida do inventário,
@@ -1262,14 +1262,14 @@ print("colunas entregues ao analista:", analista.columns)
 # | Eliminação | §11–§13 |
 # | Informação de compartilhamento | inventário de shares e exportações (§9) |
 #
-# > 🎤 **Resposta de 30 s:** "Dado pessoal é o que identifica ou torna identificável uma pessoa — login público
+# > **Em resumo:** Dado pessoal é o que identifica ou torna identificável uma pessoa — login público
 # > do GitHub incluído: ser público dispensa o consentimento, não tira o dado da lei. Sensível é a lista fechada
 # > do artigo 5º. Anonimizado sai do escopo só se não for reversível com esforço razoável; pseudonimizado
 # > continua dentro. Todo tratamento precisa de uma das dez bases legais, e os princípios viram requisito de
 # > pipeline: minimização é não propagar coluna pessoal, retenção é DELETE mais VACUUM agendado, e os direitos do
-# > titular exigem que eu saiba achar e apagar uma pessoa em todas as camadas."
+# > titular exigem que eu saiba achar e apagar uma pessoa em todas as camadas.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **LGPD × GDPR**: estrutura parecida (a LGPD foi inspirada no regulamento europeu). Diferenças que aparecem:
 #   a LGPD tem dez bases legais (inclui proteção do crédito); o GDPR fixa um mês para responder ao titular,
@@ -1416,13 +1416,13 @@ spark.sql(f"DESCRIBE HISTORY delta.`{COW}`").select("version", "operation").orde
 # Esse é o preço: **eliminar de verdade e manter time travel longo são objetivos opostos.** A retenção do
 # `VACUUM` é, ao mesmo tempo, a janela de recuperação de erro e o prazo máximo que um dado "apagado" sobrevive.
 #
-# > 🎤 **Resposta de 30 s:** "DELETE em Delta é lógico: grava arquivos novos e tira os antigos do log, mas eles
+# > **Em resumo:** DELETE em Delta é lógico: grava arquivos novos e tira os antigos do log, mas eles
 # > ficam no disco e o time travel devolve o dado. Quem apaga fisicamente é o VACUUM, que só remove o que saiu da
 # > versão atual e é mais velho que a retenção — sete dias por padrão. Então eliminação é DELETE mais VACUUM,
 # > com a retenção alinhada ao prazo legal. Retenção zero eu só uso em demonstração: ela pode apagar arquivo de
-# > escrita em andamento e derruba leitores. E VACUUM mata o time travel anterior a ele — é uma troca consciente."
+# > escrita em andamento e derruba leitores. E VACUUM mata o time travel anterior a ele — é uma troca consciente.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Propriedades de retenção**: `delta.deletedFileRetentionDuration` (padrão 7 dias) é o que o `VACUUM` usa;
 #   `delta.logRetentionDuration` (padrão 30 dias) é por quanto tempo o **log** fica. Time travel exige os dois:
@@ -1513,13 +1513,13 @@ print("arquivos .bin restantes:", len(list(Path(DV).glob("deletion_vector*.bin")
 # `VACUUM`** (respeitada a retenção). É o que `governance.esquecer_titular` embrulha (as duas primeiras etapas) e
 # o que `tests/test_governance.py` verifica de ponta a ponta, lendo o parquet bruto.
 #
-# > 🎤 **Resposta de 30 s:** "Com deletion vectors o DELETE não reescreve o parquet: grava um vetor dizendo
+# > **Em resumo:** Com deletion vectors o DELETE não reescreve o parquet: grava um vetor dizendo
 # > quais linhas pular. É ótimo para performance, mas o arquivo com o dado continua fazendo parte da versão
 # > atual, então o VACUUM não o remove. Para eliminação de verdade eu preciso de REORG TABLE APPLY PURGE, que
 # > reescreve os arquivos sem as linhas marcadas, e só depois o VACUUM apaga os originais. Como no Databricks
-# > tabela nova já nasce com deletion vectors, esse é o fluxo padrão de um pedido de esquecimento."
+# > tabela nova já nasce com deletion vectors, esse é o fluxo padrão de um pedido de esquecimento.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **`OPTIMIZE` também materializa** DVs dos arquivos que ele reescrever — mas só mexe nos arquivos que escolhe
 #   compactar. `REORG … APPLY (PURGE)` garante **todos** os arquivos com exclusão pendente. Em tabela gerenciada
@@ -1720,14 +1720,14 @@ print(f"chave do titular nos parquet do cofre: {g.contar_no_parquet_bruto(spark,
 #   um serviço de chaves (Key Vault, HSM), não uma tabela Delta, e a destruição da chave é auditada.
 # - Se "tornar ilegível" equivale juridicamente a "eliminar" é entendimento a validar com o DPO.
 #
-# > 🎤 **Resposta de 30 s:** "DELETE mais VACUUM resolve uma tabela. Um pedido de eliminação de verdade passa por
+# > **Em resumo:** DELETE mais VACUUM resolve uma tabela. Um pedido de eliminação de verdade passa por
 # > todos os lugares: o landing, senão um reprocessamento ressuscita o dado; bronze, silver e as versões de SCD;
 # > outras colunas e texto livre onde o identificador aparece; as estatísticas min/max no delta log, que o
 # > VACUUM não limpa; a lixeira do storage e os backups. Eu parto do lineage para listar as tabelas, executo da
 # > origem para o destino e registro o que foi feito. Onde reescrever tudo é inviável, a alternativa é
-# > crypto-shredding: uma chave por titular, e eliminar vira destruir a chave."
+# > crypto-shredding: uma chave por titular, e eliminar vira destruir a chave.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Checkpoint do log**: a cada N commits o Delta grava um checkpoint parquet dentro do `_delta_log` com o
 #   estado consolidado — as estatísticas dos arquivos **ativos** vão junto. Entradas de arquivos removidos somem
@@ -1758,7 +1758,7 @@ print(f"chave do titular nos parquet do cofre: {g.contar_no_parquet_bruto(spark,
 # titulares e a ANPD (Autoridade Nacional de Proteção de Dados): recebe os pedidos, orienta a empresa, responde
 # à autoridade. Ele decide **o quê** e **por quê**. O engenheiro de dados entrega o **como** — e a prova.
 #
-# **Por que importa** — Entrevista de sênior testa se você sabe **onde termina a sua decisão**. Engenheiro que
+# **Por que importa** — O ponto é saber **onde termina a decisão do engenheiro**. Engenheiro que
 # "decide" a base legal ou o prazo de retenção sozinho é risco; engenheiro que espera o jurídico dizer que
 # `DELETE` não apaga também.
 #
@@ -1778,13 +1778,13 @@ print(f"chave do titular nos parquet do cofre: {g.contar_no_parquet_bruto(spark,
 # travel devolve o dado apagado, que o deletion vector mantém o parquet, que o `repo_name` desfaz a máscara do
 # login. Tudo o que este notebook provou é o tipo de coisa que precisa chegar a ele antes de virar incidente.
 #
-# > 🎤 **Resposta de 30 s:** "O DPO decide o quê e por quê: base legal, prazo, se o pedido do titular procede. Eu
+# > **Em resumo:** O DPO decide o quê e por quê: base legal, prazo, se o pedido do titular procede. Eu
 # > entrego o como e a evidência: política de classificação em código, pipeline que respeita retenção, rotina de
 # > eliminação que cobre todas as camadas, e auditoria para demonstrar. E tenho o dever de avisar o que a
 # > técnica não garante — que hash não é anonimização, que DELETE não apaga do disco. Eu não escolho a base
-# > legal; eu garanto que a decisão dele seja verdade no dado."
+# > legal; eu garanto que a decisão dele seja verdade no dado.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Outros papéis na mesa** (o time multidisciplinar): **segurança da informação** (rede,
 #   identidade, cofre, resposta a incidente), **dono do dado** (*data owner* — a área de negócio que responde
@@ -1851,7 +1851,7 @@ print(f"chave do titular nos parquet do cofre: {g.contar_no_parquet_bruto(spark,
 # VACUUM prod.silver.gh_events;
 # ```
 #
-# Pontos de Azure que a entrevista costuma tocar:
+# Pontos de Azure que mais pesam na governança:
 #
 # - **Identidade**: usuários e grupos vêm do **Microsoft Entra ID** (SCIM ou sincronização automática); job roda
 #   como **service principal**; o UC acessa o ADLS pela **identidade gerenciada** do Access Connector — nenhuma
@@ -1866,7 +1866,7 @@ print(f"chave do titular nos parquet do cofre: {g.contar_no_parquet_bruto(spark,
 #   inventário da empresa, que vai além do Databricks.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Explique a hierarquia do Unity Catalog e o que é o namespace de três níveis.**
 # <details><summary>Resposta</summary>

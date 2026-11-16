@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O repositório precisa rodar inteiro sem custo e sem conta em nuvem (estudo, demonstração ao vivo, CI), e ao mesmo
+O repositório precisa rodar inteiro sem custo e sem conta em nuvem (desenvolvimento, demonstração, CI), e ao mesmo
 tempo provar que o mesmo código roda no Azure Databricks. Ciclos de teste que dependem de subir um cluster na nuvem
 custam minutos e dinheiro por iteração.
 

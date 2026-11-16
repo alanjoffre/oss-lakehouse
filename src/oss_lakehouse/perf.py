@@ -1,6 +1,6 @@
 """Medição de performance: cronômetro com repetição e métricas da Spark UI pela REST API.
 
-Por que um módulo: "ficou mais rápido" sem número não vale em entrevista nem em code review.
+Por que um módulo: "ficou mais rápido" sem número não vale em code review nem em post-mortem.
 Aqui ficam três ferramentas que os notebooks 09 e 15 usam para PROVAR o que afirmam:
 
 - `time_it`: roda uma ação N vezes e devolve a mediana (laptop compartilhado tem ruído;

@@ -37,7 +37,7 @@ from oss_lakehouse.utils.retry import retry
 
 API_URL = "https://api.github.com"
 API_VERSION = "2022-11-28"
-USER_AGENT = "oss-lakehouse-study/0.1 (+https://github.com/alanjoffre/oss-lakehouse)"
+USER_AGENT = "oss-lakehouse/0.1 (+https://github.com/alanjoffre/oss-lakehouse)"
 RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 # Headers que importam para o pipeline (o resto é ruído na fixture).
 KEPT_HEADERS = ("content-type", "date", "etag", "last-modified", "link", "retry-after",

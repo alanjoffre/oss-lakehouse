@@ -13,7 +13,7 @@
 # > de eventos), o que deixa um job Spark lento — shuffle, skew, small files, layout ruim,
 # > UDF, spill — e o que conserta cada caso.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | §1–§13: plano físico, AQE, joins, skew, layout Delta |
 # | Python avançado | §11 (UDF Python × nativa × pandas UDF), `oss_lakehouse.perf` (context managers, dataclasses) |
@@ -215,12 +215,12 @@ wide.explain("formatted")
 # antes de mandar pela rede); depois `HashAggregate(count)` final. `AdaptiveSparkPlan
 # isFinalPlan=false`: o plano ainda pode mudar em execução (AQE, §3).
 #
-# > 🎤 **Resposta de 30 s:** "Spark é lazy: transformação monta um plano, action executa. O
+# > **Em resumo:** Spark é lazy: transformação monta um plano, action executa. O
 # > plano vira jobs, os jobs se dividem em stages em cada shuffle — que aparece como `Exchange`
 # > no plano — e cada stage roda uma task por partição. Transformação narrow fica no mesmo stage;
-# > wide (groupBy, join, distinct) exige shuffle e é onde mora o custo: disco, rede e serialização."
+# > wide (groupBy, join, distinct) exige shuffle e é onde mora o custo: disco, rede e serialização.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que o shuffle é caro?** Cada task do stage anterior escreve arquivos de shuffle
 #   (ordenados por partição de destino) no disco local; cada task do stage seguinte busca o
@@ -270,12 +270,12 @@ print(compare(timings_parts))
 # outro; qual dos dois ganha depende do volume. No cluster, a regra prática é mirar partições
 # de shuffle de **~100–200 MB** cada e um múltiplo do total de núcleos.
 #
-# > 🎤 **Resposta de 30 s:** "`shuffle.partitions` define quantas tasks rodam depois de cada
+# > **Em resumo:** `shuffle.partitions` define quantas tasks rodam depois de cada
 # > shuffle. O padrão 200 é arbitrário: grande demais para dado pequeno, pequeno demais para
 # > terabytes. Eu miro partições de 100–200 MB e múltiplos dos núcleos — e na prática deixo o
-# > AQE coalescer a partir de um valor alto."
+# > AQE coalescer a partir de um valor alto.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Vale para DataFrame/SQL. RDD usa `spark.default.parallelism`.
 # - Com AQE, o número configurado vira um **teto inicial**: ele junta partições pequenas
@@ -344,12 +344,12 @@ print("DEPOIS de executar:", grep_plan(q_rel, "Join", "isFinalPlan"))
 # O plano final mostra `BroadcastHashJoin` e mantém o `SortMergeJoin` original como referência
 # (o AQE registra os dois). Repare em `isFinalPlan=true`.
 #
-# > 🎤 **Resposta de 30 s:** "O AQE reotimiza o plano no meio da execução com o tamanho real de
+# > **Em resumo:** O AQE reotimiza o plano no meio da execução com o tamanho real de
 # > cada shuffle: junta partições pequenas, troca sort-merge por broadcast quando um lado ficou
 # > pequeno e quebra partições com skew em join. Ligado por padrão desde o 3.2 — o que eu faço é
-# > deixar o `shuffle.partitions` alto e conferir no plano final (`isFinalPlan=true`)."
+# > deixar o `shuffle.partitions` alto e conferir no plano final (`isFinalPlan=true`).
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - O AQE só age em **fronteiras de shuffle** (é lá que ele tem estatística). Um scan sem
 #   shuffle não é reotimizado.
@@ -415,12 +415,12 @@ with spark_conf(spark, {"spark.sql.adaptive.enabled": "false"}):
 # aqui é o **plano**: o BHJ não tem `Exchange` do lado grande. No cluster, esse `Exchange` é o
 # lado grande inteiro serializado, gravado e trafegado pela rede — a diferença cresce com o volume.
 #
-# > 🎤 **Resposta de 30 s:** "Broadcast join manda a tabela pequena inteira para cada executor
+# > **Em resumo:** Broadcast join manda a tabela pequena inteira para cada executor
 # > e evita o shuffle do lado grande; sort-merge faz shuffle e sort dos dois lados e escala para
 # > tabelas grandes. O Spark faz broadcast sozinho abaixo de 10 MB; acima disso eu uso hint
-# > quando sei que a dimensão cabe na memória dos executores — e confiro no plano."
+# > quando sei que a dimensão cabe na memória dos executores — e confiro no plano.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Limites do broadcast:** a tabela passa pelo driver (coleta) e fica em memória em todo
 #   executor. Broadcast de 2 GB = OOM no driver ou executores lentos de GC. Teto rígido de 8 GB.
@@ -517,7 +517,7 @@ skew_rows.append({"variante": "salting seletivo (32)", "mediana_s": round(t_salt
 # pequeno correspondente é replicado — o salting, feito pelo motor. Nossos dados são pequenos
 # demais para 256 MB, então baixamos o limiar para 2 MB (o mecanismo é o mesmo).
 #
-# **Nota de sênior — o AQE mede skew em bytes, não em linhas.** No primeiro protótipo deste
+# **Nota técnica — o AQE mede skew em bytes, não em linhas.** No primeiro protótipo deste
 # notebook o join levava só `actor_login` e `type`: a partição do bot tinha 25× as linhas da
 # mediana mas só ~3× os **bytes**, porque o mesmo texto `github-actions[bot]` repetido comprime
 # muito bem no shuffle. O AQE não a considerou skew. Com colunas de alta cardinalidade (`id`,
@@ -587,14 +587,14 @@ for g, name in (("s5-agg", "groupBy+count"), ("s5-topn", "janela top-N (rn = 1)"
 # reduzir o dado antes da janela (filtrar, pré-agregar) ou dar mais memória/partições e aceitar.
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Skew é quando uma chave concentra muitas linhas e uma task vira a
+# > **Em resumo:** Skew é quando uma chave concentra muitas linhas e uma task vira a
 # > straggler. Diagnostico na Spark UI: max muito acima da mediana em duração e shuffle read do
 # > stage. Primeiro deixo o AQE skew join agir; se não basta, faço salting só nas chaves quentes;
 # > em janela, onde nem AQE nem salting atuam, trato a chave quente à parte (filtrar o bot,
 # > processar separado, unir). E sempre pergunto: essa chave deveria estar aqui? `null` como chave
-# > de join é um skew clássico."
+# > de join é um skew clássico.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Chave nula**: em `left join`, todas as linhas com chave `null` vão para a mesma partição
 #   e nunca casam. Filtrar ou substituir por valor aleatório antes do join.
@@ -668,13 +668,13 @@ t_w_one = time_it(lambda: one_hour().coalesce(1).write.format("delta").mode("ove
 print(compare([t_w_small, t_w_one]))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Small files matam a leitura: o custo vira abrir arquivo e ler
+# > **Em resumo:** Small files matam a leitura: o custo vira abrir arquivo e ler
 # > metadado, não processar dado — e no ADLS cada abertura é uma requisição. Resolvo na origem
 # > (micro-lotes maiores, optimized writes, não particionar demais) e compacto com `OPTIMIZE`;
 # > no Databricks, auto compaction e Predictive Optimization fazem isso sozinhos. Alvo: arquivos
-# > de 100 MB a 1 GB."
+# > de 100 MB a 1 GB.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Optimized writes** (`delta.autoOptimize.optimizeWrite`): um shuffle antes de gravar para
 #   cada partição sair com arquivos grandes. **Auto compaction** (`delta.autoOptimize.autoCompact`):
@@ -783,13 +783,13 @@ print(f"liquid depois do OPTIMIZE ({sw_l.seconds:.0f}s): {detail(LC)} | {n3} lin
 print(spark.sql(f"DESCRIBE DETAIL delta.`{LC}`").select("clusteringColumns", "tableFeatures").first())
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "O Delta guarda min/max por arquivo e pula arquivos que não podem
+# > **Em resumo:** O Delta guarda min/max por arquivo e pula arquivos que não podem
 # > ter o valor filtrado. Isso só funciona se o dado estiver agrupado pela coluna do filtro —
 # > Z-order e Liquid Clustering fazem esse agrupamento. Hoje, em tabela nova, uso Liquid: é
 # > incremental, aceita trocar as chaves sem reescrever e substitui partição + Z-order. Escolho
-# > as colunas pelos filtros mais frequentes, de alta cardinalidade."
+# > as colunas pelos filtros mais frequentes, de alta cardinalidade.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Z-order em várias colunas** dilui o efeito de cada uma (a curva intercala); mais de 3–4
 #   colunas raramente compensa. E o Z-order não é incremental: reescreve tudo o que otimiza.
@@ -854,12 +854,12 @@ print("\nplano (1 hora, por event_hour):",
 # cada partição tem volume (≥ 1 GB) e o custo por arquivo é o do object storage. O que este experimento prova é o **mecanismo**
 # (pruning por pasta) e o **custo** (número de arquivos), não um ganho de tempo.
 #
-# > 🎤 **Resposta de 30 s:** "Particiono só por coluna de baixa cardinalidade que está em quase
+# > **Em resumo:** Particiono só por coluna de baixa cardinalidade que está em quase
 # > todo filtro — normalmente data — e só se cada partição tiver pelo menos ~1 GB. Abaixo disso,
 # > estatísticas + clustering fazem o mesmo trabalho sem small files. A recomendação atual do
-# > Databricks é não particionar tabela menor que ~1 TB e usar Liquid Clustering."
+# > Databricks é não particionar tabela menor que ~1 TB e usar Liquid Clustering.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Partição não muda depois** sem reescrever a tabela; Liquid muda as chaves com `ALTER`.
 # - Partição ajuda em **isolamento de concorrência** (notebook 10: `ConcurrentAppendException`
@@ -899,12 +899,12 @@ print("\nfiltro com UDF Python:", grep_plan(ev().filter(slug_udf("type") == "rel
 # empurrado: o scan sai com `PushedFilters: []` (vazio) — a tabela inteira é lida, a UDF roda
 # no `BatchEvalPython` e só **depois** vem o `Filter`. O leitor não sabe executar Python.
 #
-# > 🎤 **Resposta de 30 s:** "Pushdown leva o filtro para o leitor, que pula row groups e
+# > **Em resumo:** Pushdown leva o filtro para o leitor, que pula row groups e
 # > arquivos pelas estatísticas; pruning lê só as colunas usadas. Os dois aparecem no plano como
 # > `PushedFilters` e `ReadSchema`. O que quebra: `select *` desnecessário, filtro com UDF, cast
-# > na coluna e filtro aplicado depois de um `cache`."
+# > na coluna e filtro aplicado depois de um `cache`.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Quatro níveis de pulo**: partição (pasta) → arquivo (stats do Delta) → row group (stats do
 #   rodapé parquet) → página (column index).
@@ -951,11 +951,11 @@ cached.unpersist()
 # Com cache, cada reuso fica mais barato — mas a 1ª action paga a materialização. Só compensa
 # se **soma(reusos economizados) > custo de materializar + memória ocupada**.
 #
-# > 🎤 **Resposta de 30 s:** "Cache vale para resultado caro reusado várias vezes na mesma
+# > **Em resumo:** Cache vale para resultado caro reusado várias vezes na mesma
 # > sessão. Não uso por reflexo: em pipeline de uma passada ele só gasta memória, pode causar
-# > spill e esconde mudanças na fonte. Sempre `unpersist` no fim e confiro na aba Storage."
+# > spill e esconde mudanças na fonte. Sempre `unpersist` no fim e confiro na aba Storage.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Níveis: `MEMORY_ONLY`, `MEMORY_AND_DISK` (padrão do DataFrame), `DISK_ONLY`, `_SER`, `_2`
 #   (replicado). `cache()` é preguiçoso; `count()` materializa.
@@ -1022,7 +1022,7 @@ if len(udf_timings) == 3:
 # `BatchEvalPython` e a pandas UDF como `ArrowEvalPython` — as duas são a fronteira JVM ↔ Python,
 # que a função nativa não tem. A diferença para a nativa cresce com a complexidade e o volume.
 #
-# **Achado deste ambiente (vale ouro em entrevista).** Em Spark 4.2 a conf
+# **Achado deste ambiente (pouco documentado).** Em Spark 4.2 a conf
 # `spark.sql.execution.pythonUDF.arrow.enabled` vem `true` (a célula imprime). Logo, o MESMO
 # `F.udf(...)` muda de caminho conforme o `pyarrow` esteja ou não instalado: sem ele, pickle; com
 # ele, Arrow. Ao instalar `pandas`/`pyarrow` para medir a pandas UDF, esta célula — que antes
@@ -1033,11 +1033,11 @@ if len(udf_timings) == 3:
 # upgrade de dependência muda o plano físico sem mudar uma linha do seu código; (3) job que
 # "ficou lento/travou depois do upgrade" se investiga comparando o plano e as confs efetivas.
 #
-# > 🎤 **Resposta de 30 s:** "Ordem de preferência: função nativa do Spark, depois pandas UDF
+# > **Em resumo:** Ordem de preferência: função nativa do Spark, depois pandas UDF
 # > (Arrow, vetorizada), por último UDF Python linha a linha. A UDF Python serializa cada linha
-# > para outro processo, quebra o codegen e o pushdown e no Databricks não roda no Photon."
+# > para outro processo, quebra o codegen e o pushdown e no Databricks não roda no Photon.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Spark 3.5+ tem **UDF Python otimizada com Arrow** (`@udf(useArrow=True)` ou
 #   `spark.sql.execution.pythonUDF.arrow.enabled`) — mesma API, transporte em Arrow. Na sessão
@@ -1076,12 +1076,12 @@ first_rows = [r.type for _, r in zip(range(3), ev().select("type").toLocalIterat
 print("toLocalIterator (partição por partição):", first_rows)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "`collect` e `toPandas` trazem tudo para o driver, que é uma
+# > **Em resumo:** `collect` e `toPandas` trazem tudo para o driver, que é uma
 # > máquina só. Eu agrego ou filtro antes, uso `limit`/`take` para inspeção, `toLocalIterator`
 # > se preciso iterar, e grava-se o resultado grande em tabela — nunca no driver. O
-# > `maxResultSize` é a rede de segurança, não a solução."
+# > `maxResultSize` é a rede de segurança, não a solução.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Outras fontes de OOM no driver: broadcast grande (o driver coleta antes de enviar), plano
 #   gigante (milhares de colunas/uniões), muitos arquivos pequenos (lista de arquivos e log Delta
@@ -1130,12 +1130,12 @@ print(as_table(spill_rows))
 # que não dependem do ruído da máquina.) *Spill (Memory)* é o tamanho desserializado do que foi despejado; *Spill
 # (Disk)* é o mesmo dado serializado e comprimido no disco — por isso é menor.
 #
-# > 🎤 **Resposta de 30 s:** "Spill é a task sem memória de execução despejando em disco — não
+# > **Em resumo:** Spill é a task sem memória de execução despejando em disco — não
 # > quebra, mas fica lenta. Vejo nas métricas do stage. O remédio é partição menor: mais
 # > `shuffle.partitions` ou AQE, tratar skew, ou mais memória por core (VM memory-optimized).
-# > Aumentar memória sem olhar o tamanho da partição só adia o problema."
+# > Aumentar memória sem olhar o tamanho da partição só adia o problema.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Memória unificada**: `spark.memory.fraction` (0,6 do heap menos 300 MB) é dividida entre
 #   execução e armazenamento (cache); execução pode tomar o espaço do cache. Por isso cache
@@ -1206,7 +1206,7 @@ print(as_table(spill_rows))
 # Profile* (SQL/serverless), `system.query.history` e as métricas do compute (notebook 15).
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. O que é lazy evaluation e qual a vantagem?**
 # <details><summary>Resposta</summary>Transformações só montam o plano; a action executa. O

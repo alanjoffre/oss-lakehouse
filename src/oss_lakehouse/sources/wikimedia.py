@@ -27,7 +27,7 @@ import requests
 STREAM_URL = "https://stream.wikimedia.org/v2/stream/recentchange"
 # A Wikimedia bloqueia cliente sem User-Agent descritivo (política de UA da fundação).
 USER_AGENT = (
-    "oss-lakehouse-study/0.1 (https://github.com/alanjoffre/oss-lakehouse; estudo de engenharia de dados)"
+    "oss-lakehouse/0.1 (https://github.com/alanjoffre/oss-lakehouse; engenharia de dados, open source)"
 )
 
 log = logging.getLogger(__name__)

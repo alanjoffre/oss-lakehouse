@@ -1,6 +1,6 @@
-# Guia de estudo
+# Guia de perguntas técnicas
 
-> Gerado por `scripts/build_guia.py` a partir da seção **Perguntas de entrevista** de cada notebook. Não editar à mão: mude a pergunta no notebook e rode `make guia`.
+> Gerado por `scripts/build_guia.py` a partir da seção **Perguntas técnicas** de cada notebook. Não editar à mão: mude a pergunta no notebook e rode `make guia`.
 
 **199 perguntas** em 18 notebooks. Clique na pergunta para abrir a resposta curta; o notebook indicado tem a demonstração rodando e o aprofundamento.
 
@@ -8,7 +8,7 @@
 
 | Notebook | Perguntas |
 |---|---|
-| [00 · Mapa de competências e arquitetura](#00-mapa-de-competencias-e-arquitetura) | 11 |
+| [00 · Mapa da arquitetura e das capacidades](#00-mapa-da-arquitetura) | 11 |
 | [01 · Ambiente: Spark local, Databricks e Azure](#01-ambiente-local-databricks-azure) | 11 |
 | [02 · Python avançado para engenharia de dados](#02-python-avancado) | 12 |
 | [03 · Ingestão incremental de arquivos: landing → bronze, checkpoint e Auto Loader](#03-ingestao-arquivos-auto-loader) | 9 |
@@ -24,14 +24,14 @@
 | [13 · Git, CI/CD e Declarative Automation Bundles](#13-cicd-git-asset-bundles) | 12 |
 | [14 · Azure com Terraform + Azurite (custo zero)](#14-azure-terraform-azurite) | 10 |
 | [15 · Observabilidade e custo](#15-observabilidade-e-custo) | 12 |
-| [16 · Live coding: SQL e PySpark](#16-live-coding-sql-pyspark) | 12 |
-| [17 · Simulado de system design e troubleshooting](#17-simulado-system-design) | 12 |
+| [16 · SQL e PySpark: exercícios resolvidos](#16-exercicios-sql-pyspark) | 12 |
+| [17 · Casos de system design e troubleshooting](#17-casos-system-design) | 12 |
 
-<a id="00-mapa-de-competencias-e-arquitetura"></a>
+<a id="00-mapa-da-arquitetura"></a>
 
-## 00 · Mapa de competências e arquitetura
+## 00 · Mapa da arquitetura e das capacidades
 
-Notebook: [`00_mapa_de_competencias_e_arquitetura.ipynb`](notebooks/00_mapa_de_competencias_e_arquitetura.ipynb)
+Notebook: [`00_mapa_da_arquitetura.ipynb`](notebooks/00_mapa_da_arquitetura.ipynb)
 
 <details>
 <summary><b>1. O que é um lakehouse e em que difere de um data warehouse?</b></summary>
@@ -244,7 +244,7 @@ grupos. Para contar, `Counter`; para agrupar em streaming, a entrada precisa vir
 </details>
 
 <details>
-<summary><b>3. Escreva um decorator de retry. O que um sênior acrescenta?</b></summary>
+<summary><b>3. Escreva um decorator de retry. O que uma versão de produção acrescenta?</b></summary>
 
 Backoff exponencial com jitter, lista explícita de exceções re-tentáveis, teto de espera e de tentativas,
 `functools.wraps`, `ParamSpec`, `sleep` injetável para teste — e a pergunta "a operação é idempotente?".
@@ -1240,7 +1240,7 @@ modelo, versão do prompt e chave por linha, então sei exatamente o que gerou c
 
 Gabarito rotulado, baseline simples e métrica com intervalo de confiança. No caso dos títulos: 120 exemplos,
 LLM contra palavras-chave, matriz de confusão e recortes por dificuldade. E digo as limitações: amostra pequena
-e rótulo proposto por modelo de linguagem medem concordância, não verdade (§4).
+e rótulo proposto por modelo medem concordância, não verdade (§4).
 
 </details>
 
@@ -1642,11 +1642,11 @@ carga real, com e sem.
 
 </details>
 
-<a id="16-live-coding-sql-pyspark"></a>
+<a id="16-exercicios-sql-pyspark"></a>
 
-## 16 · Live coding: SQL e PySpark
+## 16 · SQL e PySpark: exercícios resolvidos
 
-Notebook: [`16_live_coding_sql_pyspark.ipynb`](notebooks/16_live_coding_sql_pyspark.ipynb)
+Notebook: [`16_exercicios_sql_pyspark.ipynb`](notebooks/16_exercicios_sql_pyspark.ipynb)
 
 <details>
 <summary><b>1. `ROW_NUMBER`, `RANK` ou `DENSE_RANK` para top-N?</b></summary>
@@ -1744,11 +1744,11 @@ do estágio da janela.
 
 </details>
 
-<a id="17-simulado-system-design"></a>
+<a id="17-casos-system-design"></a>
 
-## 17 · Simulado de system design e troubleshooting
+## 17 · Casos de system design e troubleshooting
 
-Notebook: [`17_simulado_system_design.ipynb`](notebooks/17_simulado_system_design.ipynb)
+Notebook: [`17_casos_system_design.ipynb`](notebooks/17_casos_system_design.ipynb)
 
 <details>
 <summary><b>1. Desenhe um pipeline para 1 TB/dia. Por onde começa?</b></summary>

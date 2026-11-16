@@ -13,12 +13,12 @@
 # > em vez de apagar em silêncio, **falha** quando o contrato com o consumidor quebra — e mostra o que o
 # > Spark Declarative Pipelines open source faz (e não faz) em relação ao Lakeflow.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Arquitetura de pipelines | expectations warn/drop/fail, quarentena, contrato como portão de publicação |
 # | Databricks | Lakeflow Declarative Pipelines (`@dp.expect_or_drop`) ☁️, DQX ☁️, constraints Delta 🧪 |
 # | Python avançado | `oss_lakehouse.quality` (dataclasses, pydantic, YAML) com testes (`tests/test_quality.py`) |
-# | Times multidisciplinares | contrato YAML versionado = acordo entre produtor e consumidor |
+# | Contrato entre produtor e consumidor | contrato YAML versionado = acordo entre produtor e consumidor |
 #
 # Legenda: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui)
 
@@ -137,12 +137,12 @@ except ExpectationFailed as e:
     print("ABORTADO:", e)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Regra de qualidade para mim é configuração: nome, condição SQL e ação — warn
+# > **Em resumo:** Regra de qualidade para mim é configuração: nome, condição SQL e ação — warn
 # > mede, drop manda para quarentena com o motivo, fail aborta o lote. Avalio tudo numa passada só e gravo
 # > métrica por regra a cada execução, então dá para alertar em tendência. Regra nova entra como warn,
-# > observo, e só depois promovo para drop ou fail."
+# > observo, e só depois promovo para drop ou fail.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **NULL**: `repo_id > 0` com `repo_id` nulo dá NULL, não FALSE. Aqui NULL = falha (explícito); num
 #   `CHECK` constraint SQL, NULL **passa**. Por isso "não nulo" é sempre regra própria.
@@ -225,12 +225,12 @@ except ContractViolation as e:
         print("✗", p)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Contrato de dados é um YAML no Git com colunas, tipos, nulos, chave, grão,
+# > **Em resumo:** Contrato de dados é um YAML no Git com colunas, tipos, nulos, chave, grão,
 # > freshness e dono. O pipeline valida o schema real contra ele antes de publicar — schema é grátis de
 # > checar — e depois chave única e não nulos. Se quebrar, o job do produtor falha, não o dashboard do
-# > consumidor. Mudança que quebra vira versão major, com aviso e período de convivência."
+# > consumidor. Mudança que quebra vira versão major, com aviso e período de convivência.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Padrão de mercado**: ODCS (*Open Data Contract Standard*, projeto Bitol na Linux Foundation) define um
 #   YAML com schema, qualidade, SLA e responsáveis; Soda e DQX leem contratos; dbt tem *model contracts*
@@ -266,11 +266,11 @@ for rotulo, agora in [("relógio real", agora_real), ("processamento às 16h de 
           f"{'OK' if f.ok else 'ATRASADO'}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Freshness é a checagem que pega fonte parada: compara o timestamp mais novo com
+# > **Em resumo:** Freshness é a checagem que pega fonte parada: compara o timestamp mais novo com
 # > o agora e o SLA do contrato. Rodo separado do job de carga — se o job nem rodou, quem alerta é o monitor
-# > de freshness, não o job."
+# > de freshness, não o job.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Freshness pelo **tempo do evento** (`created_at`) × pelo **tempo de ingestão** (`_ingested_at`): o primeiro
 #   mede a fonte; o segundo, o pipeline. Os dois são úteis.
@@ -324,11 +324,11 @@ for r in volume_anomalies(incidente, z_threshold=3):
 # incidente da hora 15 inflou o desvio-padrão que serve de referência para as outras horas (*masking*: uma
 # anomalia grande esconde uma menor). Mediana + MAD sofrem menos com isso.
 #
-# > 🎤 **Resposta de 30 s:** "Volume eu checo com estatística simples sobre o histórico: z-score contra as
+# > **Em resumo:** Volume eu checo com estatística simples sobre o histórico: z-score contra as
 # > outras janelas, ou limites de ±X% da mesma hora da semana passada. Pega arquivo truncado e fonte que
-# > mandou metade — coisas que nenhuma regra de linha pega."
+# > mandou metade — coisas que nenhuma regra de linha pega.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Sazonalidade**: o GitHub tem ciclo diário/semanal. Comparar com a **mesma hora** de semanas anteriores é
 #   mais justo que com as horas vizinhas.
@@ -486,10 +486,10 @@ if proc.returncode == 0:
 # linha. Para quarentena, o padrão é uma segunda tabela com a condição invertida (exatamente o que fizemos
 # acima) ou o DQX.
 #
-# > 🎤 **Resposta de 30 s:** "Pipeline declarativo: declaro tabelas e expectations, o motor faz grafo,
+# > **Em resumo:** Pipeline declarativo: declaro tabelas e expectations, o motor faz grafo,
 # > ordem, incremental e métricas. O Spark open source herdou o núcleo — rodei aqui com `spark-pipelines` —
 # > mas sem expectations: o equivalente é uma view válida e uma de quarentena. No Lakeflow uso `expect`,
-# > `expect_or_drop` e `expect_or_fail`, e leio a qualidade no event log."
+# > `expect_or_drop` e `expect_or_fail`, e leio a qualidade no event log.
 #
 # **Trade-offs / quando NÃO usar**
 # - Declarativo tira controle fino (ordem de escrita, MERGE customizado, side effects). Lógica muito específica
@@ -512,10 +512,10 @@ if proc.returncode == 0:
 # (constraints) para invariantes; **por cima** (Soda/GE/dbt tests/monitoramento) para reconciliação, volume,
 # freshness e distribuição.
 #
-# > 🎤 **Resposta de 30 s:** "Dentro do Databricks eu começo com expectations do Lakeflow e uso DQX quando
+# > **Em resumo:** Dentro do Databricks eu começo com expectations do Lakeflow e uso DQX quando
 # > preciso de quarentena com motivo. Se o time é dbt, dbt tests e model contracts. Soda ou Great
 # > Expectations para checagens agendadas e relatórios fora do pipeline. E constraints Delta para o que nunca
-# > pode entrar."
+# > pode entrar.
 
 # %% [markdown]
 # ## No Databricks / Azure ☁️
@@ -531,7 +531,7 @@ if proc.returncode == 0:
 # - **Azure**: alertas de qualidade/freshness via SQL Alerts → e-mail/Teams; Azure Monitor para os jobs.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Qual a diferença entre warn, drop e fail? Quando usa cada uma?**
 # <details><summary>Resposta</summary>

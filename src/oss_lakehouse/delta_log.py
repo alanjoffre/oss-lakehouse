@@ -11,7 +11,7 @@ Três grupos de ferramentas, usadas no notebook 10:
   versões novas, reduz a uma mudança por chave e aplica com MERGE na tabela de destino.
 
 Limite assumido: caminhos locais (ou montados). Em `abfss://` o log é lido pelo próprio Delta
-(`DESCRIBE HISTORY`, `DeltaTable.history()`); abrir o JSON à mão é ferramenta de estudo e diagnóstico.
+(`DESCRIBE HISTORY`, `DeltaTable.history()`); abrir o JSON à mão serve para entender o formato e diagnosticar.
 """
 
 from __future__ import annotations

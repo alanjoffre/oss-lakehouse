@@ -23,12 +23,12 @@ evidência — plano de execução, contagem, antes e depois — e termina com p
 | | |
 |---|---|
 | **O que é** | Um pipeline *medallion* (bronze → silver → gold) em PySpark e Delta Lake, com o mesmo código rodando local e no Databricks |
-| **Com que dado** | ~279 mil eventos reais do GitHub em 3 horas (2,07 milhões no dia inteiro, usado no estudo de performance), 16 tipos de evento, JSON semiestruturado |
+| **Com que dado** | ~279 mil eventos reais do GitHub em 3 horas (2,07 milhões no dia inteiro, usado na medição de performance), 16 tipos de evento, JSON semiestruturado |
 | **O que entrega** | 18 notebooks executados (387 células de código, nenhuma com erro), um pacote com ~6 mil linhas e uma suíte com mais de 180 testes |
 | **Como se prova** | Os resultados citados saem de células executadas e versionadas; o CI roda lint, testes e validação do Terraform a cada push |
 | **O que não é** | Não está implantado em nuvem: a infraestrutura da Azure e o job do Databricks estão como código validado, não aplicado — ver [Limites declarados](#limites-declarados) |
 
-**Para avaliar em 10 minutos:** [arquitetura e decisões](notebooks/00_mapa_de_competencias_e_arquitetura.ipynb) →
+**Para avaliar em 10 minutos:** [arquitetura e decisões](notebooks/00_mapa_da_arquitetura.ipynb) →
 [MERGE e SCD2](notebooks/05_bronze_silver_merge_scd2.ipynb) → [performance](notebooks/09_performance_spark.ipynb) →
 [IA no pipeline](notebooks/12_ia_aplicada_engenharia_de_dados.ipynb) → [`src/oss_lakehouse/`](src/oss_lakehouse/) e
 [`tests/`](tests/).
@@ -94,7 +94,7 @@ identidade, catálogo, orquestração — está em [docs/diagramas.md](docs/diag
 
 | # | Notebook | O que demonstra |
 |---|---|---|
-| 00 | [Mapa de competências e arquitetura](notebooks/00_mapa_de_competencias_e_arquitetura.ipynb) | Competência → onde aparece; Lakehouse, Medallion, batch × streaming; roteiro de demonstração |
+| 00 | [Mapa da arquitetura e das capacidades](notebooks/00_mapa_da_arquitetura.ipynb) | Capacidade → onde aparece; Lakehouse, Medallion, batch × streaming; percursos de leitura |
 | 01 | [Ambiente: local, Databricks e Azure](notebooks/01_ambiente_local_databricks_azure.ipynb) | Driver/executor, configuração da sessão, tipos de compute, paridade local × Databricks |
 | 02 | [Python avançado](notebooks/02_python_avancado.ipynb) | Generators, decorators, typing, pydantic, concorrência, pytest — com dados reais |
 | 03 | [Ingestão incremental de arquivos](notebooks/03_ingestao_arquivos_auto_loader.ipynb) | Checkpoint, exactly-once, registro corrompido, backfill, Auto Loader |
@@ -110,13 +110,13 @@ identidade, catálogo, orquestração — está em [docs/diagramas.md](docs/diag
 | 13 | [Git, CI/CD e Bundles](notebooks/13_cicd_git_asset_bundles.ipynb) | Trunk-based, versionamento, Declarative Automation Bundles, GitHub Actions |
 | 14 | [Azure com Terraform + Azurite](notebooks/14_azure_terraform_azurite.ipynb) | ADLS Gen2, identidade gerenciada, Key Vault, Unity Catalog como código |
 | 15 | [Observabilidade e custo](notebooks/15_observabilidade_e_custo.ipynb) | Registro de execuções, SLI/SLO, alertas, system tables, FinOps |
-| 16 | [Live coding: SQL e PySpark](notebooks/16_live_coding_sql_pyspark.ipynb) | Exercícios clássicos resolvidos nas duas linguagens, com as pegadinhas |
-| 17 | [Simulado de system design](notebooks/17_simulado_system_design.ipynb) | Quatro casos de arquitetura e um runbook de troubleshooting |
+| 16 | [SQL e PySpark: exercícios resolvidos](notebooks/16_exercicios_sql_pyspark.ipynb) | Exercícios clássicos resolvidos nas duas linguagens, com as pegadinhas |
+| 17 | [Casos de system design](notebooks/17_casos_system_design.ipynb) | Quatro casos de arquitetura e um runbook de troubleshooting |
 
 Legenda usada nos notebooks: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui).
 
-O [`GUIA_DE_ESTUDO.md`](GUIA_DE_ESTUDO.md) reúne as 199 perguntas dos notebooks, com a resposta curta e o link para a
-demonstração.
+O [`GUIA_TECNICO.md`](GUIA_TECNICO.md) reúne as 199 perguntas técnicas dos notebooks, com a resposta curta e o link
+para o notebook.
 
 ## Engenharia do repositório
 
@@ -191,7 +191,8 @@ Documentação complementar: [diagramas](docs/diagramas.md) · [contratos das ta
 
 ## Limites declarados
 
-Este repositório é um **laboratório de estudo e demonstração**. O que ele prova e o que não prova:
+Este repositório é um **lakehouse de referência em PySpark e Delta Lake, com testes, CI e medições**. O que ele
+prova e o que não prova:
 
 - **Roda de verdade, local:** tudo o que está marcado 🧪 — Spark, Delta Lake, streaming, MERGE, SCD2, qualidade,
   performance, testes.

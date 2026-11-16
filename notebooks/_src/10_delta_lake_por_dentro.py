@@ -13,7 +13,7 @@
 # > com transação ACID, time travel, evolução de schema, deletion vectors e Change Data Feed —
 # > e o que cada operação (DELETE, MERGE, OPTIMIZE, VACUUM) realmente grava.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | §1–§12: o formato de tabela por trás de tudo no Databricks |
 # | Arquitetura e desenvolvimento de pipelines | §3 (concorrência entre jobs), §5 (retenção), §10 (consumidor incremental com CDF) |
@@ -198,14 +198,14 @@ print(f"no disco         : {physical_files(EV)['parquet']} arquivos parquet")
 # removidos ficam lá, servindo o time travel (§4), até o `VACUUM` (§5). E o log replay feito à
 # mão, só com os JSON, chega ao mesmo número de arquivos e de linhas que o Delta.
 #
-# > 🎤 **Resposta de 30 s:** "Delta é parquet mais um log de transações. Cada commit é um JSON
+# > **Em resumo:** Delta é parquet mais um log de transações. Cada commit é um JSON
 # > numerado em `_delta_log` com ações: `add` e `remove` de arquivos, `metaData` com o schema,
 # > `protocol` e `commitInfo`. O estado da tabela é o replay dessas ações. Como o commit é a
 # > criação atômica de um arquivo, a escrita é tudo-ou-nada; como o leitor fixa uma versão, ele
 # > nunca vê escrita pela metade; e como `remove` não apaga o arquivo, dá para ler versões
-# > antigas."
+# > antigas.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **O que torna o commit atômico?** Criar o arquivo `N.json` com semântica *put-if-absent*
 #   (falha se já existe). No ADLS Gen2 isso é o rename atômico do namespace hierárquico; no S3
@@ -263,12 +263,12 @@ print("arquivos ativos segundo o Delta:", detail(EV)["arquivos ativos"])
 # `remove` são os *tombstones* ainda guardados (o `VACUUM` precisa deles para saber o que pode
 # apagar e desde quando). `commitInfo` **não** entra: é histórico, não estado.
 #
-# > 🎤 **Resposta de 30 s:** "A cada 10 commits o Delta grava um checkpoint em parquet com o
+# > **Em resumo:** A cada 10 commits o Delta grava um checkpoint em parquet com o
 # > estado consolidado — arquivos ativos, schema, protocolo. Para abrir a tabela, o leitor vai
 # > ao `_last_checkpoint`, carrega esse parquet e aplica só os JSON mais novos. É o que mantém
-# > o custo de abrir a tabela independente do tamanho do histórico."
+# > o custo de abrir a tabela independente do tamanho do histórico.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Limpeza do log**: JSON e checkpoints mais velhos que `delta.logRetentionDuration`
 #   (padrão 30 dias) são apagados quando um checkpoint novo é gravado. Time travel além disso é
@@ -428,14 +428,14 @@ race(OCC3, lambda: retry_on_conflict(
     on_retry=lambda n, exc: print(f"   tentativa {n} do job A perdeu ({type(exc).__name__}); repetindo…")))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Delta não usa lock: é concorrência otimista. Cada escrita lê uma
+# > **Em resumo:** Delta não usa lock: é concorrência otimista. Cada escrita lê uma
 # > versão, grava arquivos e tenta criar o próximo JSON do log; se outro commit chegou antes, o
 # > Delta confere se ele mexeu em algo que eu li. Se não, recommita sozinho; se sim, lança
 # > `ConcurrentAppendException` ou parente. Eu evito no desenho — jobs concorrentes em partições
 # > disjuntas e com a partição explícita na condição do MERGE/UPDATE/DELETE — e trato o resto
-# > com retry, porque essas operações são idempotentes."
+# > com retry, porque essas operações são idempotentes.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **As exceções** (`delta.exceptions`): `ConcurrentAppendException` (o outro adicionou arquivo
 #   onde eu li), `ConcurrentDeleteReadException` (o outro removeu arquivo que eu li),
@@ -513,13 +513,13 @@ print(f"parquet no disco: {before} antes → {physical_files(EV)['parquet']} dep
 print(f"a versão 4 continua legível: {spark.read.format('delta').option('versionAsOf', 4).load(EV).count():,} linhas")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Cada commit é uma versão. `versionAsOf` ou `timestampAsOf` lê a
+# > **Em resumo:** Cada commit é uma versão. `versionAsOf` ou `timestampAsOf` lê a
 # > tabela como era; `DESCRIBE HISTORY` mostra quem fez o quê; `RESTORE` volta a tabela gravando
 # > um commit novo que reativa os arquivos antigos — é barato e reversível. O limite é a
 # > retenção: depois do VACUUM os arquivos antigos somem e o time travel para aquela versão
-# > falha. Time travel é para auditoria e recuperação de curto prazo, não é backup."
+# > falha. Time travel é para auditoria e recuperação de curto prazo, não é backup.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **O timestamp do commit** é, por padrão, a data de modificação do arquivo JSON no storage —
 #   copiar a tabela para outro lugar muda os instantes. A feature *in-commit timestamps*
@@ -609,15 +609,15 @@ spark.sql(f"DESCRIBE HISTORY delta.`{VT}`").select("version", "operation", "oper
 # - **O log continua conhecendo a versão 0** (ela aparece no histórico). O VACUUM não mexe no
 #   log; ele próprio fica registrado como dois commits, `VACUUM START` e `VACUUM END`.
 #
-# > 🎤 **Resposta de 30 s:** "VACUUM apaga do storage os arquivos fora da versão atual e mais
+# > **Em resumo:** VACUUM apaga do storage os arquivos fora da versão atual e mais
 # > velhos que a retenção — 7 dias por padrão. Depois dele, time travel para versões anteriores
 # > falha. Os 7 dias protegem leitores e escritores em andamento: com retenção zero dá para
 # > apagar arquivo de uma transação que ainda não commitou e corromper a tabela. Eu nunca
 # > desligo a checagem em produção; ajusto a retenção pela janela de recuperação que o negócio
 # > precisa e pelo custo de storage — e para LGPD lembro que apagar de verdade é DELETE **mais**
-# > VACUUM."
+# > VACUUM.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Duas retenções diferentes**: `delta.deletedFileRetentionDuration` (7 dias — arquivos de
 #   dados, usado pelo VACUUM) e `delta.logRetentionDuration` (30 dias — JSON/checkpoints).
@@ -687,13 +687,13 @@ print("tipo de event_hour agora:", dict(spark.read.format("delta").load(ST).dtyp
 show_log(ST, last=2)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Por padrão o Delta faz schema enforcement: escrita com coluna a
+# > **Em resumo:** Por padrão o Delta faz schema enforcement: escrita com coluna a
 # > mais ou tipo diferente falha. Evolução é opt-in — `mergeSchema` no append, `WITH SCHEMA
 # > EVOLUTION` no MERGE — e só para mudanças compatíveis: coluna nova, e com type widening,
 # > alargar tipo. Na bronze eu deixo evoluir (não perder dado da fonte); na silver e na gold o
-# > schema é contrato: mudança passa por revisão, não por flag."
+# > schema é contrato: mudança passa por revisão, não por flag.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Onde ligar**: `.option("mergeSchema", "true")` por escrita;
 #   `spark.databricks.delta.schema.autoMerge.enabled` para a sessão (este projeto deixa
@@ -793,13 +793,13 @@ for _ in range(2):  # dois lotes: os valores continuam de onde pararam
 spark.read.format("delta").load(IDT).orderBy("sk").show()
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "`NOT NULL` e `CHECK` são regras da tabela, verificadas em toda
+# > **Em resumo:** `NOT NULL` e `CHECK` são regras da tabela, verificadas em toda
 # > escrita; se uma linha viola, o commit inteiro falha — bom para invariantes duras, tipo
 # > chave não nula. Para regra de qualidade em que eu quero separar o ruim e seguir, uso
 # > quarentena ou expectations, não constraint. Coluna gerada eu uso para partição derivada: o
-# > Delta calcula na escrita e ainda converte o filtro da coluna original em filtro de partição."
+# > Delta calcula na escrita e ainda converte o filtro da coluna original em filtro de partição.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **`PRIMARY KEY` / `FOREIGN KEY`** no Unity Catalog são **informativas** (não verificadas):
 #   documentam o modelo e ajudam o otimizador (`RELY`), mas não impedem duplicata ☁️. Unicidade
@@ -857,13 +857,13 @@ for f in json.loads(last_meta["schemaString"])["fields"]:
 # depois do mapping ganha um nome físico aleatório (`col-<uuid>`), o que impede que uma coluna
 # nova chamada `event_hour` "ressuscite" o dado da antiga.
 #
-# > 🎤 **Resposta de 30 s:** "Column mapping desacopla o nome lógico do nome físico no parquet.
+# > **Em resumo:** Column mapping desacopla o nome lógico do nome físico no parquet.
 # > Com `delta.columnMapping.mode = name`, renomear e dropar coluna viram operações de
 # > metadados, sem reescrita. O preço é subir o protocolo — leitor 2, escritor 5 —, então
 # > clientes antigos deixam de ler a tabela; e o dado da coluna dropada continua nos arquivos
-# > até um `REORG ... APPLY (PURGE)` seguido de VACUUM."
+# > até um `REORG ... APPLY (PURGE)` seguido de VACUUM.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Modos**: `name` (o usual; funciona em tabela existente) e `id` (casa pelo field id do
 #   parquet; usado na interoperabilidade com Iceberg).
@@ -979,14 +979,14 @@ print("ativos:", detail(DV), "| no disco:", physical_files(DV))
 # mesmo). O arquivo antigo e os `.bin` continuam no disco — só o VACUUM, depois da retenção, os
 # apaga.
 #
-# > 🎤 **Resposta de 30 s:** "Deletion vector é um bitmap de linhas apagadas por arquivo. Com
+# > **Em resumo:** Deletion vector é um bitmap de linhas apagadas por arquivo. Com
 # > ele, DELETE, UPDATE e MERGE param de reescrever o parquet inteiro: marcam as linhas velhas
 # > no DV e gravam só as linhas novas. Escrita pontual fica muito mais barata; a leitura paga
 # > um filtro a mais, e o OPTIMIZE ou o `REORG PURGE` consolidam depois. No Databricks vem
 # > ligado por padrão em tabelas novas e é a base da concorrência por linha. O cuidado é o
-# > protocolo — leitor 3, escritor 7 — e LGPD: a linha 'apagada' ainda está no arquivo."
+# > protocolo — leitor 3, escritor 7 — e LGPD: a linha 'apagada' ainda está no arquivo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Formato**: RoaringBitmap serializado; DVs pequenos podem ir *inline* no próprio log
 #   (`storageType: "i"`), os demais num `.bin` (`"u"`), vários DVs por arquivo.
@@ -1075,13 +1075,13 @@ print("estado gravado:", open(STATE).read())
 # feed — pré e pós — e 1 chave; uma chave alterada em dois commits também conta uma vez só).
 # Sem nada novo, a rodada 3 não lê nem escreve.
 #
-# > 🎤 **Resposta de 30 s:** "Change Data Feed é o CDC da tabela Delta: com a propriedade
+# > **Em resumo:** Change Data Feed é o CDC da tabela Delta: com a propriedade
 # > ligada, cada commit registra as linhas inseridas, apagadas e o antes/depois dos updates.
 # > O consumidor lê a partir da última versão processada — em batch com `startingVersion` ou em
 # > streaming com checkpoint — e aplica com MERGE por chave, que é idempotente. Uso para
-# > propagar UPDATE/DELETE entre camadas sem reprocessar a tabela inteira."
+# > propagar UPDATE/DELETE entre camadas sem reprocessar a tabela inteira.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Versão em streaming** (o caminho usual em produção; o checkpoint substitui o arquivo de
 #   estado — não executado aqui, o notebook 06 cobre Structured Streaming):
@@ -1157,13 +1157,13 @@ print("protocolo de dv_on agora:", protocol(DV))
 # antigo não seja levado a ler versões que ele não entende. Só foi simples assim porque os DVs
 # já tinham sido materializados; com DV ativo, o comando exige o `REORG PURGE` antes.
 #
-# > 🎤 **Resposta de 30 s:** "O protocolo é o contrato de compatibilidade da tabela: versão
+# > **Em resumo:** O protocolo é o contrato de compatibilidade da tabela: versão
 # > mínima de leitor e de escritor e, nas tabelas modernas, uma lista de table features. Ligar
 # > deletion vectors, column mapping ou clustering sobe o protocolo, e cliente que não suporta
 # > é barrado em vez de ler errado. Antes de ligar um recurso eu confiro quem consome a tabela
-# > — principalmente leitores fora do Spark."
+# > — principalmente leitores fora do Spark.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Mapa das versões legadas**: escritor 2 = append-only e invariantes; 3 = CHECK; 4 = CDF e
 #   generated columns; 5 = column mapping (com leitor 2); 6 = identity; 7 = table features
@@ -1216,12 +1216,12 @@ print("ativos:", detail(OT), "| no disco:", physical_files(OT))
 # continua com os 40 arquivos pequenos **mais** o compactado: OPTIMIZE aumenta o uso de storage
 # até o VACUUM passar.
 #
-# > 🎤 **Resposta de 30 s:** "Para o log, OPTIMIZE é um commit com `remove` dos arquivos
+# > **Em resumo:** Para o log, OPTIMIZE é um commit com `remove` dos arquivos
 # > pequenos e `add` dos compactados, marcado com `dataChange=false`. Por isso é seguro rodar
 # > com a tabela em uso: leitores seguem no snapshot deles, streams ignoram o commit, appends
-# > não conflitam. O que ele não faz é liberar espaço — isso é o VACUUM, depois da retenção."
+# > não conflitam. O que ele não faz é liberar espaço — isso é o VACUUM, depois da retenção.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Com o que o OPTIMIZE conflita**: UPDATE/DELETE/MERGE que removam os mesmos arquivos
 #   (`ConcurrentDeleteReadException`/`ConcurrentDeleteDeleteException`). Com deletion vectors e
@@ -1252,7 +1252,7 @@ print("ativos:", detail(OT), "| no disco:", physical_files(OT))
 # | Alteração pontual | Copy-on-write ou deletion vectors (§9) | Copy-on-write, *position/equality deletes* (v2), deletion vectors (v3) | Copy-on-write **ou** merge-on-read (logs de delta por arquivo base + compactação) |
 # | Ponto forte | Integração com Spark/Databricks, streaming, CDF, simplicidade operacional | Neutralidade de motor (Trino, Flink, Snowflake, BigQuery, Athena…), evolução de partição | Upsert de alta frequência e ingestão CDC com índice por chave |
 #
-# **Por que importa.** A pergunta de entrevista raramente é "qual é melhor" — é "por que
+# **Por que importa.** A pergunta útil raramente é "qual é melhor" — é "por que
 # Delta aqui?" e "como outro motor lê isso?". Em 2026 os formatos convergiram bastante
 # (deletion vectors, row tracking e tipo `VARIANT` existem no Delta e no Iceberg v3), e a
 # disputa passou do formato para o **catálogo** (Unity Catalog, Polaris, Glue…).
@@ -1275,14 +1275,14 @@ print("ativos:", detail(OT), "| no disco:", physical_files(OT))
 # O Delta OSS também tem UniForm (módulo `delta-iceberg`, com Hive Metastore como catálogo);
 # não está instalado neste ambiente, por isso fica marcado como ☁️ e não é demonstrado.
 #
-# > 🎤 **Resposta de 30 s:** "Os três resolvem o mesmo problema — ACID e evolução sobre parquet.
+# > **Em resumo:** Os três resolvem o mesmo problema — ACID e evolução sobre parquet.
 # > Delta usa um log ordenado na pasta da tabela; Iceberg, uma árvore de metadados com o commit
 # > feito no catálogo; Hudi, uma timeline com foco em upsert. Eu escolho pelo ecossistema: em
 # > Databricks, Delta é o nativo e o mais bem integrado; se outros motores precisam ler, exponho
 # > via UniForm/Iceberg REST do Unity Catalog em vez de duplicar dado. A diferença técnica
-# > entre os formatos hoje é menor que a diferença entre os catálogos."
+# > entre os formatos hoje é menor que a diferença entre os catálogos.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Limites do UniForm**: leitura apenas (clientes Iceberg não escrevem na tabela Delta); a
 #   geração do metadado Iceberg é assíncrona (pequena defasagem); exige column mapping e
@@ -1358,7 +1358,7 @@ print("ativos:", detail(OT), "| no disco:", physical_files(OT))
 # ```
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. O que é uma tabela Delta, fisicamente?**
 # <details><summary>Resposta</summary>Arquivos parquet + a pasta `_delta_log` com um JSON por

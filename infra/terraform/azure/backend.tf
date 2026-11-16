@@ -1,4 +1,4 @@
-# Estado remoto (exemplo). Estado local serve para estudo; em time, o estado fica num Storage
+# Estado remoto (exemplo). Estado local serve para uso individual; em time, o estado fica num Storage
 # Account dedicado, com lock por lease de blob (dois `apply` simultâneos não corrompem nada)
 # e autenticação por Entra ID (sem chave da conta). Um estado por ambiente (key diferente).
 #

@@ -7,17 +7,17 @@
 # ---
 
 # %% [markdown]
-# # 00 · Mapa de competências e arquitetura
+# # 00 · Mapa da arquitetura e das capacidades
 #
-# > Este notebook liga cada competência de engenharia de dados a um notebook que o demonstra, desenha a arquitetura alvo na Azure
+# > Este notebook liga cada capacidade de engenharia de dados ao notebook que a demonstra, desenha a arquitetura alvo na Azure
 # > e a equivalente local, explica os conceitos de base (lakehouse, Medallion, batch × streaming, Lambda × Kappa,
 # > ETL × ELT) e mostra o estado real do lakehouse local agora.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Arquitetura e desenvolvimento de pipelines | §3 a §8, ADRs (§9) |
-# | Definição de arquiteturas e evolução de soluções (diferencial) | §3, §5 (críticas ao Medallion), §9 |
-# | Boa comunicação, equipes multidisciplinares | §2 (roteiros de demonstração), ADRs |
+# | Decisões de arquitetura e sua evolução | §3, §5 (críticas ao Medallion), §9 |
+# | Decisões documentadas e percursos de leitura | §2 (percursos de leitura), ADRs |
 # | Databricks · Azure | §3 (arquitetura alvo), §10 (o que existe local) |
 #
 # Legenda: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui)
@@ -48,15 +48,15 @@ spark = get_spark("00")
 print(f"Spark {spark.version} | raiz dos dados: {DATA.relative_to(PROJECT_ROOT)}/")
 
 # %% [markdown]
-# ## 1. Mapa de competências → onde cada uma é demonstrada 🧪
+# ## 1. Mapa de capacidades → onde cada uma é demonstrada 🧪
 #
-# **O que é** — A tabela de rastreabilidade (*traceability matrix*) entre o que se espera de um engenheiro de
-# dados sênior e a evidência neste repositório. Cada linha aponta para o notebook (trilha completa em `docs/plano_notebooks.md`).
+# **O que é** — A tabela de rastreabilidade (*traceability matrix*) entre cada capacidade de engenharia de
+# dados e a evidência neste repositório. Cada linha aponta para o notebook (trilha completa em `docs/plano_notebooks.md`).
 #
-# **Por que importa** — Numa entrevista, "tenho experiência com X" vale pouco; "abre o notebook 09, a célula
-# mostra o `explain()` antes e depois do broadcast" vale muito. A tabela é o índice para responder com prova.
+# **Por que importa** — "Tem suporte a X" vale pouco sem prova; "o notebook 09 mostra o `explain()` antes e
+# depois do broadcast" se confere em minutos. A tabela é o índice das evidências.
 #
-# | Competência | Notebook(s) e tema | O que mostrar |
+# | Capacidade | Notebook(s) e tema | Evidência |
 # |---|---|---|
 # | Engenharia de dados de ponta a ponta | 03 ingestão de arquivos · 04 API incremental · 05 MERGE/SCD2 · 07 modelagem · 17 system design | pipeline de ponta a ponta, idempotente, com dado atrasado e duplicado |
 # | Python avançado | 02 Python avançado · `src/oss_lakehouse/` · `tests/` | typing, generators, decorators (`utils/retry.py`), pydantic, pytest |
@@ -64,14 +64,13 @@ print(f"Spark {spark.version} | raiz dos dados: {DATA.relative_to(PROJECT_ROOT)}
 # | Microsoft Azure | 01 §8 Azure Databricks · 14 Terraform + Azurite · §3 deste notebook | ADLS Gen2, Access Connector, Key Vault, VNet injection |
 # | Git e versionamento | 13 Git, CI/CD e bundles | trunk-based, Conventional Commits, SemVer de pacote e de contrato, revert × reset |
 # | Arquitetura e desenvolvimento de pipelines | 00 (este) · 05 · 06 streaming · 08 qualidade · ADRs | Medallion, contratos, quarentena, decisões registradas |
-# | IA aplicada à engenharia de dados | 12 IA aplicada · ADR 0006 | LLM para PII/classificação/regras, **com avaliação** e humano no circuito |
-# | Comunicação, multidisciplinar, ágil | §2 roteiros · ADRs · 13 PR e revisão · 17 simulado | explicar decisão com contexto e alternativas |
-# | Ferramentas de IA para engenharia de dados | 12 · 13 (IA no fluxo de desenvolvimento) | avaliação, custo, rastreabilidade |
-# | Projetos de engenharia com Databricks | 03 · 08 · 11 Unity Catalog · 13 bundles · 15 observabilidade | job multi-tarefa, system tables, governança |
-# | Definição de arquitetura e evolução | 00 §3–§8 · ADRs · 17 | trade-offs explícitos, o que muda quando o volume cresce |
-# | Projetos ágeis | 13 (trunk-based, PR pequeno, CI) · 17 | entrega incremental com teste e deploy automatizado |
+# | IA aplicada à engenharia de dados | 12 IA aplicada · 13 §5 (IA na revisão de código) · ADR 0006 | LLM para PII/classificação/regras, **com avaliação** e humano no circuito |
+# | Decisões documentadas e revisão | §2 percursos · ADRs · 13 PR e revisão · 17 system design | explicar decisão com contexto e alternativas |
+# | Jobs e governança no Databricks | 03 · 08 · 11 Unity Catalog · 13 bundles · 15 observabilidade | job multi-tarefa, system tables, governança |
+# | Decisões de arquitetura e sua evolução | 00 §3–§8 · ADRs · 17 | trade-offs explícitos, o que muda quando o volume cresce |
+# | Entrega incremental | 13 (trunk-based, PR pequeno, CI) · 17 | entrega incremental com teste e deploy automatizado |
 # | Governança e LGPD | 11 Unity Catalog e LGPD | grants, row filter, column mask, lineage |
-# | Live coding | 16 exercícios SQL/PySpark | janelas, dedup, top-N, sessionização |
+# | SQL e PySpark | 16 exercícios resolvidos | janelas, dedup, top-N, sessionização |
 #
 # **Como funciona** — A célula abaixo lê o plano da trilha e confere quais notebooks já existem como fonte e como
 # `.ipynb` executado (o repositório é construído em paralelo; o que falta aparece como pendente).
@@ -90,12 +89,12 @@ for num, arquivo, tema in linhas:
 print(f"\n{len(linhas)} notebooks na trilha; {prontos} com .ipynb executado neste momento")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Organizei o repositório como prova por competência: cada notebook cobre um
-# > tema com código executado e saída versionada — ingestão incremental, MERGE e SCD2, streaming, performance,
-# > Delta por dentro, governança, IA com avaliação, CI/CD com bundles e Terraform da Azure. Posso abrir qualquer
-# > um e rodar ao vivo."
+# > **Em resumo:** O repositório se organiza por capacidade: cada notebook cobre um tema com código
+# > executado e saída versionada — ingestão incremental, MERGE e SCD2, streaming, performance, Delta por dentro,
+# > governança, IA com avaliação, CI/CD com bundles e Terraform da Azure. Qualquer um roda de novo com
+# > `make nb N=<número>`.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que dados públicos do GitHub:** volume real (~92 mil eventos/hora), JSON semiestruturado com formato
 #   variável por tipo, duplicatas entre arquivos, skew natural (bots) e uma fonte de streaming de verdade
@@ -105,14 +104,14 @@ print(f"\n{len(linhas)} notebooks na trilha; {prontos} com .ipynb executado nest
 # </details>
 #
 # **Trade-offs / quando NÃO usar**
-# - Um repositório de demonstração cobre **amplitude**; profundidade de produção (SLAs reais, on-call, custo de
-#   meses) se conta com experiência, não com notebook.
+# - Um repositório de referência cobre **amplitude**; profundidade de produção (SLAs reais, on-call, custo de
+#   meses) não cabe em notebook.
 
 # %% [markdown]
-# ## 2. Como usar este repositório: estudar e demonstrar ao vivo 🧪
+# ## 2. Como usar este repositório: ler e executar 🧪
 #
-# **Para estudar** — siga a trilha na ordem; cada notebook termina com perguntas de entrevista e um resumo de
-# 3–5 bullets para a véspera. Preparação única (offline depois disso):
+# **Para ler** — siga a trilha na ordem; cada notebook termina com perguntas técnicas e um resumo de
+# 3–5 bullets. Preparação única (offline depois disso):
 #
 # ```bash
 # make setup && make data && make bronze   # dependências, GH Archive de 2026-10-01, bronze
@@ -120,9 +119,9 @@ print(f"\n{len(linhas)} notebooks na trilha; {prontos} com .ipynb executado nest
 # make test                                # testes (Spark local)
 # ```
 #
-# **Roteiro de 10 minutos** (entrevista técnica curta — 1 história, ponta a ponta):
+# **Percurso de 10 minutos** (visão rápida — 1 história, ponta a ponta):
 #
-# | Min | Abrir | O que falar |
+# | Min | Abrir | Assunto |
 # |---|---|---|
 # | 0–2 | 00 §3 (diagrama) | fontes → landing → bronze/silver/gold → consumo; por que lakehouse e Delta (ADRs 0001–0002) |
 # | 2–4 | 03 | ingestão incremental com checkpoint: rodar de novo processa **0** linhas (idempotência); Auto Loader no Databricks |
@@ -130,9 +129,9 @@ print(f"\n{len(linhas)} notebooks na trilha; {prontos} com .ipynb executado nest
 # | 6–8 | 13 | `databricks.yml` + job bronze → silver → gold → quality; CI com testes e deploy por ambiente |
 # | 8–10 | 12 | IA no pipeline com avaliação (golden set, métrica, limiar) e humano no circuito |
 #
-# **Roteiro de 30 minutos** (painel técnico — mostra profundidade):
+# **Percurso de 30 minutos** (revisão técnica — em profundidade):
 #
-# | Min | Abrir | O que falar |
+# | Min | Abrir | Assunto |
 # |---|---|---|
 # | 0–3 | 00 §3 e §5 | arquitetura alvo × local; Medallion e suas críticas |
 # | 3–8 | 03 + 04 | arquivo (Auto Loader, schema evolution, rescued data) e API (paginação, rate limit, ETag, marca d'água) |
@@ -143,23 +142,23 @@ print(f"\n{len(linhas)} notebooks na trilha; {prontos} com .ipynb executado nest
 # | 24–27 | 13 + 14 | bundle, GitHub Actions com OIDC, Terraform da Azure |
 # | 27–30 | 17 | system design: "como isso escala para 100×?" e troubleshooting |
 #
-# **Como funciona** — Antes da entrevista: `make nb N=03` para garantir que roda nesta máquina e abrir os
-# `.ipynb` já executados (as saídas estão no Git — se a demo ao vivo falhar, a evidência continua lá).
+# **Como funciona** — `make nb N=03` confere que o notebook roda nesta máquina; os `.ipynb` já executados
+# estão no Git, então a evidência fica disponível mesmo sem rodar nada.
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Se tivermos 10 minutos, eu mostro uma história só: arquivo chegando, bronze
-# > incremental, silver com MERGE, job no Databricks via bundle e IA com avaliação. Com 30, entro em performance,
-# > Delta por dentro, governança e infraestrutura."
+# > **Em resumo:** Em 10 minutos, uma história só: arquivo chegando, bronze incremental, silver com
+# > MERGE, job no Databricks via bundle e IA com avaliação. Em 30, entram performance, Delta por dentro,
+# > governança e infraestrutura.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
-# - **Plano B de demonstração:** os `.ipynb` versionados já têm a saída; a demo ao vivo é bônus, não dependência.
-# - **Pergunta de entrevistador não técnico:** use a §3 (diagrama) e o resumo de cada notebook, sem código.
+# - **Sem executar nada:** os `.ipynb` versionados já têm a saída; rodar de novo confirma, mas não é requisito.
+# - **Leitor não técnico:** a §3 (diagrama) e o resumo de cada notebook bastam, sem código.
 # </details>
 #
 # **Trade-offs / quando NÃO usar**
-# - Demonstração ao vivo consome tempo de conversa; se o entrevistador quer discutir decisões, mostre o ADR e não
-#   o código.
+# - Para discutir decisões, o ADR é melhor ponto de partida que o código: tem contexto, alternativas e
+#   consequências.
 
 # %% [markdown]
 # ## 3. Arquitetura alvo na Azure e a equivalente local ☁️/🧪
@@ -219,12 +218,12 @@ print(f"\n{len(linhas)} notebooks na trilha; {prontos} com .ipynb executado nest
 # | System tables, Azure Monitor | métricas do `StreamingQuery` e API REST da Spark UI | 15 |
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "As fontes caem numa landing no ADLS; Auto Loader leva para a bronze em Delta;
+# > **Em resumo:** As fontes caem numa landing no ADLS; Auto Loader leva para a bronze em Delta;
 # > MERGE para a silver; modelo dimensional na gold; consumo por SQL warehouse e IA. Tudo governado pelo Unity
 # > Catalog, orquestrado por Lakeflow Jobs, deployado por bundle no GitHub Actions e provisionado por Terraform.
-# > Local, cada peça tem um substituto e o código é o mesmo."
+# > Local, cada peça tem um substituto e o código é o mesmo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que landing separada da bronze:** a landing guarda o arquivo como chegou (reprocessável, auditável);
 #   a bronze já é tabela. Apagar a bronze e recriar a partir da landing é o *disaster recovery* mais simples.
@@ -275,11 +274,11 @@ else:
     print("bronze ainda não existe — rode `make bronze`")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Data lake é storage barato sem garantias; warehouse é SQL com garantias e
+# > **Em resumo:** Data lake é storage barato sem garantias; warehouse é SQL com garantias e
 # > formato fechado; lakehouse põe um log transacional sobre arquivos abertos e ganha ACID, MERGE e time travel
-# > sem sair do object storage — BI e ML na mesma cópia."
+# > sem sair do object storage — BI e ML na mesma cópia.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Leitura consistente:** o leitor lista o `_delta_log`, não a pasta; arquivo Parquet escrito por um job que
 #   falhou nunca entrou num commit e é invisível (e removido pelo VACUUM). Detalhe no notebook 10.
@@ -321,11 +320,11 @@ else:
     print("bronze ainda não existe — rode `make bronze`")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Bronze é a cópia fiel e reprocessável; silver é a verdade limpa por entidade, com
+# > **Em resumo:** Bronze é a cópia fiel e reprocessável; silver é a verdade limpa por entidade, com
 # > dedup e histórico; gold é o modelo de consumo. O ganho é separar ingestão de interpretação. Mas Medallion é
-# > critério de qualidade, não de modelagem — a gold continua precisando de Kimball."
+# > critério de qualidade, não de modelagem — a gold continua precisando de Kimball.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais — as críticas ao Medallion</summary>
+# <details><summary>🔎 Para aprofundar — as críticas ao Medallion</summary>
 #
 # - **Não é modelagem:** diz *quão confiável* é a tabela, não *como* modelá-la. Gold sem modelo dimensional vira
 #   uma tabela por dashboard (notebook 07).
@@ -374,11 +373,11 @@ for rodada in (1, 2):
           f"total na tabela={total}  ({time.perf_counter() - t0:.1f}s)")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Escolho pela latência que o negócio precisa, não pela moda. Para analytics, uso
+# > **Em resumo:** Escolho pela latência que o negócio precisa, não pela moda. Para analytics, uso
 # > Structured Streaming com `availableNow` agendado: o mesmo código é batch incremental hoje e vira streaming
-# > contínuo amanhã trocando só o trigger, e o checkpoint garante que cada arquivo entra uma vez."
+# > contínuo amanhã trocando só o trigger, e o checkpoint garante que cada arquivo entra uma vez.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Exatamente uma vez** (*exactly-once*): fonte reprocessável + checkpoint + sink idempotente (Delta grava o
 #   id do lote no commit). Notebook 06.
@@ -427,11 +426,11 @@ print(f"mesma tabela, mesmo schema: {batch.schema == stream.schema} | batch.isSt
       f"| stream.isStreaming={stream.isStreaming}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Lambda tem duas implementações da mesma regra e alguém para reconciliar; Kappa tem
+# > **Em resumo:** Lambda tem duas implementações da mesma regra e alguém para reconciliar; Kappa tem
 # > uma, sobre um log reprocessável. Com Delta, a tabela é o log: leio em batch ou em streaming com a mesma API,
-# > então na prática faço Kappa — e o reprocessamento é reler a bronze."
+# > então na prática faço Kappa — e o reprocessamento é reler a bronze.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Quando Lambda ainda aparece:** o streaming aproxima (ex.: contagem distinta aproximada) e um batch noturno
 #   corrige; ou sistemas legados de batch convivendo com um streaming novo.
@@ -466,11 +465,11 @@ if log_dir.exists():
     print(f"tipo de 'payload' na bronze: {dict(bronze.dtypes)['payload']}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Prefiro ELT: carrego o bruto e transformo dentro do lakehouse em camadas, porque o
+# > **Em resumo:** Prefiro ELT: carrego o bruto e transformo dentro do lakehouse em camadas, porque o
 # > bruto fica reprocessável e o Spark escala. A exceção é dado sensível: PII que não deve nem entrar no lake é
-# > mascarada ou descartada na extração — isso é um 'T' antes do 'L', e está certo."
+# > mascarada ou descartada na extração — isso é um 'T' antes do 'L', e está certo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **EtLT:** um "t" leve na ingestão (padronizar encoding, remover PII, adicionar linhagem) e o "T" pesado
 #   depois — é o que a bronze deste repo faz (`_source_file`, `_ingested_at`).
@@ -488,8 +487,8 @@ if log_dir.exists():
 # decisão, com **contexto → decisão → alternativas → consequências**, em `docs/adr/`.
 #
 # **Por que importa** — Arquitetura é a soma das decisões difíceis de desfazer. Sem registro, cada pessoa nova
-# reabre a discussão, ou pior, desfaz a decisão sem saber o motivo. É também a melhor ferramenta de comunicação
-# com times multidisciplinares: o *porquê* fica escrito.
+# reabre a discussão, ou pior, desfaz a decisão sem saber o motivo. É também a melhor ferramenta de alinhamento
+# entre engenharia, negócio e segurança: o *porquê* fica escrito.
 #
 # **Como funciona**
 
@@ -510,11 +509,11 @@ for adr in sorted((PROJECT_ROOT / "docs" / "adr").glob("0*.md")):
 # | 0005 | Local-first com paridade por configuração; o que não existe local é marcado ☁️ |
 # | 0006 | IA no pipeline só com avaliação, saída validada e humano no circuito |
 #
-# > 🎤 **Resposta de 30 s:** "Registro decisão de arquitetura em ADR: contexto, decisão, alternativas e
+# > **Em resumo:** Registro decisão de arquitetura em ADR: contexto, decisão, alternativas e
 # > consequências, inclusive as ruins. Quando o contexto muda, escrevo um ADR novo que substitui o antigo — o
-# > histórico mostra por que o sistema é como é."
+# > histórico mostra por que o sistema é como é.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **O que vira ADR:** decisão cara de reverter (formato de tabela, orquestrador, modelo de segurança). Escolha de
 #   biblioteca de teste não vira.
@@ -530,7 +529,7 @@ for adr in sorted((PROJECT_ROOT / "docs" / "adr").glob("0*.md")):
 # **O que é** — Inventário do que existe agora em `data/`: arquivos de entrada e tabelas Delta por camada, com
 # linhas, arquivos, tamanho e versão.
 #
-# **Por que importa** — Antes de qualquer demonstração, saber o que está carregado. Em produção, o equivalente é
+# **Por que importa** — Antes de qualquer análise, saber o que está carregado. Em produção, o equivalente é
 # consultar o Unity Catalog e as system tables.
 #
 # **Como funciona** — Uma tabela Delta é uma pasta com `_delta_log/`. A célula é tolerante: camada que ainda não
@@ -575,11 +574,11 @@ if log_dir.exists():
     print(plano_count.strip()[:400])
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Antes de demonstrar, confiro o inventário: a landing com as horas do GH Archive,
+# > **Em resumo:** Antes de rodar qualquer etapa, confiro o inventário: a landing com as horas do GH Archive,
 # > a bronze com as linhas, arquivos e versão. Em Delta, `count(*)` sem filtro sai das estatísticas do log —
-# > é metadado, não varredura."
+# > é metadado, não varredura.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Small files:** muitos arquivos pequenos por tabela/partição custam abertura de arquivo e listagem;
 #   `numFiles` e `sizeInBytes` do `DESCRIBE DETAIL` são o primeiro termômetro (notebook 09).
@@ -616,7 +615,7 @@ if log_dir.exists():
 # ```
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. O que é um lakehouse e em que difere de um data warehouse?**
 # <details><summary>Resposta</summary>
@@ -690,7 +689,7 @@ if log_dir.exists():
 # %% [markdown]
 # ## Resumo
 #
-# - Cada competência tem um notebook com evidência executada (§1); roteiros de 10 e 30 minutos (§2).
+# - Cada capacidade tem um notebook com evidência executada (§1); percursos de 10 e 30 minutos (§2).
 # - Alvo: fontes → landing (ADLS) → bronze/silver/gold Delta no Unity Catalog → SQL/IA; Lakeflow Jobs, bundles,
 #   Terraform, Key Vault; local, cada peça tem um substituto e o código é o mesmo.
 # - Lakehouse = log transacional sobre arquivos abertos; Medallion = qualidade por camada (não é modelagem).

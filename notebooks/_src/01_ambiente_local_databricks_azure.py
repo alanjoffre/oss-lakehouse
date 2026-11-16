@@ -13,7 +13,7 @@
 # > mostra como ele se compara ao Databricks e ao Azure Databricks, e diz com honestidade o que não dá para
 # > reproduzir localmente.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | §1–§5 (arquitetura do Spark), §7 (runtimes, compute, Free Edition, `dbutils`, Volumes) |
 # | Microsoft Azure | §8 (workspace, VNet injection, Key Vault, Access Connector) |
@@ -110,12 +110,12 @@ for ex in requests.get(f"{api}/executors", timeout=5).json():
           f"  tasks concluídas={ex['completedTasks']}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "O driver roda o meu código, otimiza o plano e quebra o trabalho em stages e tasks;
+# > **Em resumo:** O driver roda o meu código, otimiza o plano e quebra o trabalho em stages e tasks;
 # > os executors executam as tasks sobre as partições e guardam cache; o cluster manager aloca as máquinas.
 # > Em `local[N]` tudo é uma JVM com N threads — por isso no laptop a memória que importa é a do driver.
-# > No Databricks, o cluster manager é a plataforma e cada worker roda um executor."
+# > No Databricks, o cluster manager é a plataforma e cada worker roda um executor.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Job → stage → task:** cada *action* (`count`, `write`) gera um job; o job é cortado em **stages** nas
 #   fronteiras de *shuffle* (redistribuição de dados entre partições pela rede); cada stage tem uma task por
@@ -172,11 +172,11 @@ except Exception as exc:
 # existia; o valor só foi gravado no dicionário de configuração da sessão. Conferir config não prova nada —
 # confira o recurso real (heap, executors na Spark UI).
 #
-# > 🎤 **Resposta de 30 s:** "Memória de driver e executor é config estática: precisa estar no `spark-submit`,
+# > **Em resumo:** Memória de driver e executor é config estática: precisa estar no `spark-submit`,
 # > na config do cluster ou no builder **antes** de a JVM subir. Num notebook do Databricks a sessão já existe,
-# > então isso se ajusta no cluster ou no tipo de instância, não com `spark.conf.set`."
+# > então isso se ajusta no cluster ou no tipo de instância, não com `spark.conf.set`.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Memória fora do heap:** `spark.executor.memoryOverhead` (padrão 10%, mínimo 384 MiB) cobre o processo
 #   Python das UDFs, buffers de rede e Arrow. *Container killed by YARN/K8s for exceeding memory limits* é
@@ -232,11 +232,11 @@ spark.read.format("delta").load(path).orderBy("id").show()
  .orderBy("version").show(truncate=False))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Localmente, o Delta é um JAR que precisa casar com a versão do Spark e do Scala;
+# > **Em resumo:** Localmente, o Delta é um JAR que precisa casar com a versão do Spark e do Scala;
 # > o `configure_spark_with_delta_pip` resolve a coordenada certa a partir do pip. No Databricks o Delta vem no
-# > runtime, então a versão do Delta é a do DBR — e eu nunca instalo `delta-spark` ou `pyspark` no cluster."
+# > runtime, então a versão do Delta é a do DBR — e eu nunca instalo `delta-spark` ou `pyspark` no cluster.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Duas configs obrigatórias:** `spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension` (sintaxe SQL:
 #   `MERGE`, `VACUUM`, `DESCRIBE HISTORY`) e `spark.sql.catalog.spark_catalog=…DeltaCatalog` (o catálogo
@@ -288,11 +288,11 @@ for soma in sorted((j for j in jobs if str(j.get("description", "")).startswith(
 #   aqui: a 1ª execução paga geração de código e aquecimento da JVM (JIT). Benchmark que mede só a 1ª execução
 #   mede o aquecimento, não a consulta (notebook 09).
 #
-# > 🎤 **Resposta de 30 s:** "Na Spark UI eu olho primeiro a aba SQL para ver o plano físico e onde está o
+# > **Em resumo:** Na Spark UI eu olho primeiro a aba SQL para ver o plano físico e onde está o
 # > tempo; depois o stage mais lento e a distribuição de duração das tasks — máximo muito acima da mediana é
-# > skew; spill em disco é falta de memória por partição. Ela tem API REST, então dá para automatizar."
+# > skew; spill em disco é falta de memória por partição. Ela tem API REST, então dá para automatizar.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **History Server:** a UI morre com o driver; para jobs concluídos, o *event log*
 #   (`spark.eventLog.enabled`) alimenta o History Server. No Databricks, o histórico do cluster cumpre esse papel
@@ -354,12 +354,12 @@ for nome, s in [("local", local), ("databricks", nuvem)]:
     print(f"{'':<11} checkpoint → {s.checkpoint('bronze_gh_events')}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Tenho uma função só para a sessão e uma classe de configuração só para caminhos.
+# > **Em resumo:** Tenho uma função só para a sessão e uma classe de configuração só para caminhos.
 # > Local ela monta a sessão com Delta e configs para laptop; no Databricks ela devolve a sessão que já existe.
 # > Os caminhos vêm de variáveis de ambiente, então o mesmo wheel roda nos dois lugares — o job do bundle só
-# > define `OSSLH_DATA_ROOT`."
+# > define `OSSLH_DATA_ROOT`.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que não `spark.conf.set` no código do pipeline:** config de performance pertence ao ambiente (cluster,
 #   job), não à lógica. No Databricks, `spark.sql.shuffle.partitions` fixo atrapalha o AQE (*Adaptive Query
@@ -411,11 +411,11 @@ print(f"tem sparkContext? {hasattr(spark, 'sparkContext')} (no Connect, acessar 
 # spark.read.table("samples.nyctaxi.trips").limit(5).show()      # o plano roda no Databricks
 # ```
 #
-# > 🎤 **Resposta de 30 s:** "Spark Connect separa cliente e servidor: o cliente manda o plano por gRPC e recebe
+# > **Em resumo:** Spark Connect separa cliente e servidor: o cliente manda o plano por gRPC e recebe
 # > o resultado em Arrow. É o que permite o Databricks Connect no IDE e o serverless. A consequência prática é que
-# > RDD e `sparkContext` não existem nesse modo — código novo deve usar só a API de DataFrame."
+# > RDD e `sparkContext` não existem nesse modo — código novo deve usar só a API de DataFrame.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Isolamento:** várias aplicações no mesmo servidor sem uma derrubar a outra (OOM no cliente não mata o
 #   driver); atualização de servidor sem mudar o cliente.
@@ -497,12 +497,12 @@ print(f"tem sparkContext? {hasattr(spark, 'sparkContext')} (no Connect, acessar 
 # Local, o equivalente é deliberadamente simples: segredos por variável de ambiente (`OSSLH_GITHUB_TOKEN`,
 # lido pelo `Settings`), parâmetros por argumento do CLI, arquivos com `pathlib`.
 #
-# > 🎤 **Resposta de 30 s:** "Para produção eu uso job compute ou serverless, nunca all-purpose; runtime LTS;
+# > **Em resumo:** Para produção eu uso job compute ou serverless, nunca all-purpose; runtime LTS;
 # > código em wheel deployado por bundle, não notebook em Git folder pessoal. Arquivo bruto em Volume, segredo em
-# > secret scope apoiado no Key Vault. A Free Edition serve para estudar — só serverless, 1 warehouse 2X-Small,
-# > 5 tasks simultâneas e uso não comercial."
+# > secret scope apoiado no Key Vault. A Free Edition serve para experimentar — só serverless, 1 warehouse 2X-Small,
+# > 5 tasks simultâneas e uso não comercial.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Photon:** motor vetorizado em C++ do Databricks; acelera SQL/DataFrame (scan, join, agregação), não UDF
 #   Python. Custa mais DBU por hora — vale quando reduz o tempo mais que o preço.
@@ -582,12 +582,12 @@ print(f"tem sparkContext? {hasattr(spark, 'sparkContext')} (no Connect, acessar 
 # databricks secrets put-acl kv-oss data-engineers READ
 # ```
 #
-# > 🎤 **Resposta de 30 s:** "Em Azure eu subo o workspace Premium com VNet injection e Secure Cluster
+# > **Em resumo:** Em Azure eu subo o workspace Premium com VNet injection e Secure Cluster
 # > Connectivity, storage por private endpoint, acesso ao ADLS via Access Connector no Unity Catalog — sem chave
 # > de storage — e segredos de terceiros num Key Vault exposto como secret scope somente leitura. Tudo em
-# > Terraform."
+# > Terraform.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Dimensionar as subnets:** cada nó usa um IP em cada subnet; /26 dá ~59 nós — subnet pequena é limite de
 #   escala que só aparece em produção.
@@ -627,12 +627,12 @@ print(f"Python {sys.version.split()[0]} local | serverless env 6 do Databricks u
 print(f"Spark local {spark.version} | Delta {md.version('delta-spark')} | Java {sc._jvm.java.lang.System.getProperty('java.version')}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Eu desenvolvo e testo localmente porque é rápido e grátis, mas não finjo paridade:
+# > **Em resumo:** Eu desenvolvo e testo localmente porque é rápido e grátis, mas não finjo paridade:
 # > API de DataFrame e semântica do Delta são as mesmas; Auto Loader, Unity Catalog, Photon e serverless não
 # > existem no laptop. A lacuna fecha com o deploy do bundle num alvo `dev` e um teste de integração lá antes
-# > de produção."
+# > de produção.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Armadilha de versão:** código que usa recurso do Spark 4.2 passa local e quebra num DBR 17.3 (Spark 4.0).
 #   Regra: alinhar a versão local ao runtime de produção, ou testar no runtime de produção no CI.
@@ -661,7 +661,7 @@ print(f"Spark local {spark.version} | Delta {md.version('delta-spark')} | Java {
 # ```
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Qual a diferença entre driver e executor? Onde roda uma UDF Python?**
 # <details><summary>Resposta</summary>

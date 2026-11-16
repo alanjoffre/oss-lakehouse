@@ -12,7 +12,7 @@
 # > Um cliente de API que respeita paginação, cota, ETag e falhas, grava a resposta **bruta** na landing,
 # > consolida com MERGE idempotente e, reexecutado, busca **só o que mudou** desde a última marca d'água.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Python avançado | cliente HTTP com `requests.Session`, retry por decorator, adapter de gravação/replay |
 # | Arquitetura e desenvolvimento de pipelines | landing bruta → Silver por MERGE; estado incremental; idempotência |
@@ -102,12 +102,12 @@ REPOS = gh.select_active_repos(bronze, n=18)
 print(f"{len(REPOS)} repositórios selecionados; primeiros: {REPOS[:5]}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Escolho o padrão pela fonte: arquivo quando o produtor exporta em lote, CDC quando
+# > **Em resumo:** Escolho o padrão pela fonte: arquivo quando o produtor exporta em lote, CDC quando
 # > a fonte é um banco e eu preciso de deletes e baixa latência, API quando o dado só existe atrás de um endpoint.
 # > API é o mais frágil — cota, paginação, falha transitória e mudança de contrato são problema meu — então
-# > isolo a ingestão: gravo a resposta bruta e só depois transformo."
+# > isolo a ingestão: gravo a resposta bruta e só depois transformo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Push × pull:** webhook (o GitHub chama você) dá latência baixa, mas você precisa de um endpoint sempre de pé
 #   e de reconciliação periódica — webhook perdido não volta. Pull com marca d'água é mais simples de operar.
@@ -141,11 +141,11 @@ print(json.dumps(safe_headers, indent=1))
 print("timeout (conexão, leitura):", client.timeout, "| tentativas:", client.attempts)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Todo cliente de API que escrevo tem sessão reaproveitada, timeout explícito,
+# > **Em resumo:** Todo cliente de API que escrevo tem sessão reaproveitada, timeout explícito,
 # > versão da API fixada e segredo vindo de fora — variável de ambiente local, Key Vault na Azure. Sem timeout,
-# > um socket pendurado segura o job e o cluster por horas."
+# > um socket pendurado segura o job e o cluster por horas.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - `requests` **não tem timeout padrão**: sem o parâmetro, espera indefinidamente.
 # - O adapter (`HTTPAdapter`) é o ponto de extensão do `requests`: aqui ele grava/reproduz respostas
@@ -182,11 +182,11 @@ print(f"arquivos na landing: {len(rep.files)} → {rep.files[0].parent}")
 # Cada `GET /repos/{dono}/{repo}` gastou uma unidade. (Se outro processo no mesmo IP usar a API ao mesmo tempo,
 # o gasto observado sobe — a cota é **por IP** sem token, e **por token** com token.)
 #
-# > 🎤 **Resposta de 30 s:** "Leio `x-ratelimit-remaining` e `reset` a cada resposta. Se a cota acaba e o reset
+# > **Em resumo:** Leio `x-ratelimit-remaining` e `reset` a cada resposta. Se a cota acaba e o reset
 # > está perto, espero; se está longe, falho de forma controlada e o orquestrador reagenda — nunca deixo o job
-# > dormindo uma hora segurando cluster."
+# > dormindo uma hora segurando cluster.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - O GitHub tem **dois** limites: o primário (por hora) e o **secundário** (concorrência e rajada — ex.: muitas
 #   requisições simultâneas ou muitos pontos por minuto). O secundário responde 403/429 com `Retry-After`.
@@ -224,11 +224,11 @@ print(f"cota antes do 304: {after.remaining} | depois: {r304.rate_limit.remainin
 # vale para requisição autenticada. Moral: ETag sempre economiza transferência e processamento; economizar cota
 # depende de autenticar — mais um motivo para usar token (do Key Vault) em produção.
 #
-# > 🎤 **Resposta de 30 s:** "Guardo o ETag de cada recurso junto com o dado bruto. Na próxima carga mando
+# > **Em resumo:** Guardo o ETag de cada recurso junto com o dado bruto. Na próxima carga mando
 # > `If-None-Match`; 304 significa 'nada mudou', e eu pulo download e MERGE. Com token, o GitHub nem desconta
-# > o 304 da cota."
+# > o 304 da cota.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - `W/"..."` é um ETag **fraco** (*weak*): equivalência semântica, não byte a byte — suficiente para cache.
 # - Alternativa ao ETag: `If-Modified-Since` com o header `Last-Modified`.
@@ -297,11 +297,11 @@ except gh.RateLimitExceeded as exc:
     print(f"cota primária esgotada: {exc} — falha rápida (esperas: {len(slept)})")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Separo erro transitório de erro definitivo. 5xx, 429 e limite secundário eu retento
+# > **Em resumo:** Separo erro transitório de erro definitivo. 5xx, 429 e limite secundário eu retento
 # > com backoff exponencial e jitter, respeitando `Retry-After`; 4xx de negócio eu não retento. Se a cota primária
-# > só volta daqui a uma hora, falho rápido com uma exceção específica e deixo o orquestrador reagendar."
+# > só volta daqui a uma hora, falho rápido com uma exceção específica e deixo o orquestrador reagendar.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Full jitter** (`uniform(0, base·2^n)`): espalha as tentativas; é o que o blog de arquitetura da AWS mostrou
 #   reduzir mais a contenção.
@@ -361,11 +361,11 @@ activity = (bronze.groupBy(F.col("repo.id").alias("repo_id"))
  .orderBy(F.desc("stars")).show(5, truncate=False))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Gravo a resposta bruta com envelope — URL, status, horário do servidor, ETag — e só
+# > **Em resumo:** Gravo a resposta bruta com envelope — URL, status, horário do servidor, ETag — e só
 # > depois transformo. A Silver é atualizada por MERGE na chave natural estável, com guarda de 'só se for mais
-# > novo'. Assim reprocessar é seguro e barato: não volto à API."
+# > novo'. Assim reprocessar é seguro e barato: não volto à API.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Dedupe antes do MERGE**: duas linhas de origem para a mesma chave fazem o Delta falhar
 #   (*multiple source rows matched*). Por isso o `row_number()` por `repo_id`.
@@ -457,12 +457,12 @@ final.groupBy("is_pr", "state").count().orderBy("is_pr", "state").show()
 # Repare: o endpoint `/issues` devolve **issues e pull requests** (PR tem o campo `pull_request`). Num repositório
 # como este, quase tudo é PR — quem esquece o filtro conta PR como issue.
 #
-# > 🎤 **Resposta de 30 s:** "Incremental por marca d'água: guardo o maior `updated_at` processado e peço só
+# > **Em resumo:** Incremental por marca d'água: guardo o maior `updated_at` processado e peço só
 # > `since` dali, ordenado por atualização crescente. Gravo a marca só depois de o dado estar na landing, e o MERGE
 # > por id absorve as repetições — `since` é inclusivo. Paginação eu sigo pelo header `Link`, que no GitHub já é
-# > cursor; offset em lista que muda durante a leitura pula registro."
+# > cursor; offset em lista que muda durante a leitura pula registro.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Offset × cursor:** com `?page=N` (offset), se um item for atualizado durante a leitura ele "pula" para o fim
 #   da ordenação e todos os seguintes sobem uma posição — o item na fronteira da página some sem erro. Cursor
@@ -530,7 +530,7 @@ final.groupBy("is_pr", "state").count().orderBy("is_pr", "state").show()
 #   na cota sem token.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Como você ingere uma API paginada sem perder nem duplicar registros?**
 # <details><summary>Resposta</summary>

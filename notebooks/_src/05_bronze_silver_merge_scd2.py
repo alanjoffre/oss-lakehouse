@@ -13,7 +13,7 @@
 # > e que a dimensão de repositórios guarda o **histórico real de renomeações** — inclusive quando o
 # > dado chega fora de ordem.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Python avançado | funções puras e testadas em `oss_lakehouse.silver` e `oss_lakehouse.scd2` |
 # | Databricks e processamento de dados | MERGE do Delta, `foreachBatch`, deletion vectors, Auto CDC ☁️ |
@@ -140,12 +140,12 @@ print("PRs com payload.pull_request.merged preenchido:",
 pr.groupBy(F.get_json_object("payload", "$.action").alias("action")).count().orderBy(F.desc("count")).show()
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Na Silver eu tipo tudo (id vira bigint, data vira timestamp UTC), achato os
+# > **Em resumo:** Na Silver eu tipo tudo (id vira bigint, data vira timestamp UTC), achato os
 # > structs e extraio do JSON só os campos que o negócio usa, com `from_json` e schema parcial — um parse por
 # > linha em vez de um por campo. O payload bruto fica na bronze: se amanhã eu precisar de outro campo,
-# > reprocesso a partir dela. E valido o dado real, não a documentação: aqui o formato do evento de PR mudou."
+# > reprocesso a partir dela. E valido o dado real, não a documentação: aqui o formato do evento de PR mudou.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que não inferir o schema do payload?** Inferência lê o dado inteiro (ou uma amostra) e gera um
 #   struct gigante com a união de todos os tipos de evento; um campo novo muda o schema em silêncio.
@@ -232,12 +232,12 @@ print("gravadas:", f"{spark.read.format('delta').load(str(DEMO / 'dedup_stream')
 # Aqui a Silver usa outra estratégia, que não precisa de estado: **dedup dentro do micro-lote**
 # (`row_number`) **+ MERGE** contra a tabela (seção 3). O MERGE é a deduplicação "contra o passado".
 #
-# > 🎤 **Resposta de 30 s:** "`dropDuplicates` não é determinístico sobre qual linha fica. Quando a regra é
+# > **Em resumo:** `dropDuplicates` não é determinístico sobre qual linha fica. Quando a regra é
 # > 'a mais recente', uso `row_number` sobre a chave ordenando por `_ingested_at` com desempate. Em
 # > streaming, `dropDuplicatesWithinWatermark` para limitar o estado. E entre lotes, quem deduplica é o
-# > MERGE na chave."
+# > MERGE na chave.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - `row_number` exige um *shuffle* (redistribuir dados entre máquinas) pela chave — custo igual ao do
 #   `dropDuplicates`. Para dedup global numa tabela grande, faça só sobre o lote novo + MERGE.
@@ -331,13 +331,13 @@ print("linhas com action corrigida:",
       spark.read.format("delta").load(demo_silver).filter("action = 'corrigido_na_fonte'").count())
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Leio a bronze como stream Delta com checkpoint e `trigger(availableNow)` —
+# > **Em resumo:** Leio a bronze como stream Delta com checkpoint e `trigger(availableNow)` —
 # > processa só o que é novo e para, ótimo para job agendado. Em cada micro-lote, `foreachBatch` tipa,
 # > deduplica e faz MERGE pela chave. `foreachBatch` é *at-least-once*: se o job cair depois do MERGE e antes
 # > do checkpoint, o lote roda de novo — e o MERGE torna isso inofensivo. Ainda condiciono o UPDATE a
-# > `hash mudou`, então reprocessar não reescreve nada."
+# > `hash mudou`, então reprocessar não reescreve nada.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que não `append` puro?** Append + checkpoint é exactly-once só enquanto o checkpoint existir.
 #   Perdeu o checkpoint (ou precisou reprocessar um dia) → duplicou. MERGE tolera.
@@ -423,13 +423,13 @@ print("arquivos lidos com  t.event_id IN (3 ids):", len(t8.filter(F.col("event_i
 # Sem o literal (`ON t.event_id = s.event_id` puro), o Delta OSS não sabe de antemão quais ids virão e
 # varre tudo. (No Databricks, o *Dynamic File Pruning* faz parte disso automaticamente ☁️.)
 #
-# > 🎤 **Resposta de 30 s:** "MERGE lento quase sempre é uma de duas coisas: varredura do alvo inteiro na
+# > **Em resumo:** MERGE lento quase sempre é uma de duas coisas: varredura do alvo inteiro na
 # > busca, ou reescrita de arquivos grandes por poucas linhas. Para a primeira, ponho na condição um
 # > predicado do alvo — partição ou intervalo de data/id — e mantenho o dado agrupado pela chave (Liquid
 # > Clustering ou Z-order) para os min/max serem seletivos. Para a segunda, ligo deletion vectors. E reduzo
-# > a fonte: MERGE só do lote novo, deduplicado — fonte com chave duplicada nem roda."
+# > a fonte: MERGE só do lote novo, deduplicado — fonte com chave duplicada nem roda.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Fonte com duas linhas para a mesma chave** → erro `DELTA_MULTIPLE_SOURCE_ROW_MATCHING_TARGET_ROW_IN_MERGE`.
 #   Por isso o `dedup_events` vem antes do MERGE.
@@ -508,12 +508,12 @@ print("SCD2:"); scd2_ex.show(truncate=False)
 print("SCD3:"); scd3.show(truncate=False)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "SCD1 sobrescreve — responde 'como é hoje'. SCD2 versiona com `valid_from`,
+# > **Em resumo:** SCD1 sobrescreve — responde 'como é hoje'. SCD2 versiona com `valid_from`,
 # > `valid_to` e `is_current` — responde 'como era quando o fato aconteceu', ao custo de crescer e de exigir
 # > join por intervalo. SCD3 guarda só o valor anterior numa coluna. Na prática, SCD2 para o que é auditável
-# > (dono, preço, segmento do cliente) e SCD1 para correção de cadastro."
+# > (dono, preço, segmento do cliente) e SCD1 para correção de cadastro.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **SCD tipo 4**: histórico numa tabela separada (dimensão atual pequena + tabela de histórico).
 #   **Tipo 6** = 1+2+3: versões (2), mais a coluna "valor atual" repetida em todas as versões (1), e o anterior (3).
@@ -678,13 +678,13 @@ for t in ("2026-10-01 11:30:00", "2026-10-01 13:00:00"):
 #  AND (e.created_at < d.valid_to OR d.valid_to IS NULL)
 # ```
 #
-# > 🎤 **Resposta de 30 s:** "Minha SCD2 é um MERGE, mas não o ingênuo. Para as chaves do lote eu junto o
+# > **Em resumo:** Minha SCD2 é um MERGE, mas não o ingênuo. Para as chaves do lote eu junto o
 # > histórico atual com as observações novas, reordeno por data efetiva, colapso o que não mudou e recalculo
 # > `valid_to` com `lead`. O MERGE aplica a diferença — insere, atualiza e apaga versões. Com isso, dado
 # > atrasado se encaixa no lugar certo, e como a surrogate key é hash de chave + `valid_from`, reexecutar dá
-# > zero mudanças. Aqui, a hora 11 chegando depois revelou renomeações reais anteriores."
+# > zero mudanças. Aqui, a hora 11 chegando depois revelou renomeações reais anteriores.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que surrogate key por hash e não `IDENTITY`?** Coluna identidade (Databricks
 #   `GENERATED ALWAYS AS IDENTITY`) gera número novo a cada carga — reconstruir a dimensão muda as chaves e
@@ -754,7 +754,7 @@ print([linha.strip() for linha in inspect.getdoc(dp.create_auto_cdc_flow).splitl
 #   em job agendado; o mesmo código roda contínuo trocando o trigger).
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. O que torna um pipeline idempotente? Como você prova?**
 # <details><summary>Resposta</summary>

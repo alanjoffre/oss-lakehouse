@@ -1,12 +1,12 @@
 # %% [markdown]
 # # 02 · Python avançado para engenharia de dados
 #
-# > Prova, com os arquivos reais do GH Archive, que o Python de um engenheiro de dados sênior é medido em
+# > Prova, com os arquivos reais do GH Archive, que o Python de engenharia de dados de produção é medido em
 # > memória, tempo e falhas tratadas — não em sintaxe: generators com memória constante, decorators e
 # > context managers que viram infraestrutura, typing que documenta contrato, validação com pydantic,
 # > concorrência escolhida pelo tipo de gargalo, e testes.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Python avançado | §1–§10 (generators, itertools, decorators, context managers, typing, dataclasses × pydantic, functools, concorrência, erros e logs) |
 # | Processamento de dados | §1 (arquivo de 18 MB com memória constante), §8 (paralelismo medido), §13–§14 (Python × Spark, UDF) |
@@ -114,12 +114,12 @@ esgotado = iter([1, 2, 3])
 print("1ª passada:", list(esgotado), "| 2ª passada:", list(esgotado))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Generator é uma função com `yield` que produz um item por vez sob demanda.
+# > **Em resumo:** Generator é uma função com `yield` que produz um item por vez sob demanda.
 # > Uso para ler arquivo e paginar API: a memória fica do tamanho de um item, não do arquivo. Medi aqui
 # > num arquivo real de 1 hora do GH Archive: a lista inteira chega a centenas de MB de pico, o generator
-# > fica abaixo de 1 MB. Cuidado: ele só pode ser percorrido uma vez."
+# > fica abaixo de 1 MB. Cuidado: ele só pode ser percorrido uma vez.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Protocolo:** `iter(x)` chama `x.__iter__()`; o `for` chama `__next__()` até `StopIteration`.
 #   Generator implementa os dois e ainda `send()`, `throw()` e `close()`.
@@ -175,11 +175,11 @@ print("chain:", list(islice(chain("ab", range(3)), 5)))
 # A pegadinha: `itertools.groupby` agrupa **elementos consecutivos** com a mesma chave (como o `uniq` do
 # Unix), não faz um `GROUP BY` do SQL. Sem ordenar antes, o mesmo tipo aparece em vários grupos.
 #
-# > 🎤 **Resposta de 30 s:** "`islice` para pegar o começo de um fluxo sem lê-lo todo, `batched` para
+# > **Em resumo:** `islice` para pegar o começo de um fluxo sem lê-lo todo, `batched` para
 # > lotes de N (inserir no banco, chamar API), `groupby` só com entrada ordenada pela chave — ele agrupa
-# > vizinhos, não é GROUP BY. Para contar uso `Counter`."
+# > vizinhos, não é GROUP BY. Para contar uso `Counter`.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - `groupby` também reaproveita o iterador interno: se você não consumir o grupo `g` antes de avançar
 #   para a próxima chave, ele se esvazia. Sempre `list(g)` ou consuma na hora.
@@ -211,7 +211,7 @@ print("chain:", list(islice(chain("ab", range(3)), 5)))
 #                                          └─ espera uniform(0, min(max, base·2^(n-1))) e tenta de novo
 # ```
 #
-# Três escolhas de sênior no código: (1) só re-tenta as exceções declaradas (erro de programação não deve
+# Três escolhas que pesam no código: (1) só re-tenta as exceções declaradas (erro de programação não deve
 # ser re-tentado); (2) *backoff* exponencial com *full jitter* (espera aleatória para N clientes não
 # voltarem todos juntos — o *thundering herd*); (3) `sleep` injetável, para o teste não esperar de verdade.
 
@@ -271,12 +271,12 @@ print("WatchEvent nos 20 mil primeiros:", contar_tipo(ARQ, "WatchEvent"))
 print("log gerado:", buf.getvalue().strip())
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Decorator é uma função que embrulha outra. Uso para preocupações
+# > **Em resumo:** Decorator é uma função que embrulha outra. Uso para preocupações
 # > transversais: retry com backoff exponencial e jitter nas chamadas de rede, medição de tempo com log
 # > estruturado, cache. Sempre com `functools.wraps` para não perder nome e docstring, e com `ParamSpec`
-# > para o type checker continuar enxergando a assinatura original."
+# > para o type checker continuar enxergando a assinatura original.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Decorator com parâmetro** tem 3 níveis: `retry(config) → decorator(func) → wrapper(*args)`.
 # - **Idempotência:** retry só é seguro se a operação for idempotente (repetir dá o mesmo efeito).
@@ -342,12 +342,12 @@ print("todos fechados:", all(f.closed for f in saidas.values()))
 print({p.name: sum(1 for _ in p.open()) for p in sorted(pasta.glob("*.jsonl"))})
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Context manager garante a limpeza com `with`, mesmo com exceção. Escrevo
+# > **Em resumo:** Context manager garante a limpeza com `with`, mesmo com exceção. Escrevo
 # > com `@contextmanager` quando é simples: código antes do `yield` é o `__enter__`, depois é o
 # > `__exit__`, e o `try/finally` cuida do erro. Exemplo real: escrita atômica — grava em temporário e
-# > renomeia; o consumidor nunca lê arquivo pela metade. Para N recursos dinâmicos, `ExitStack`."
+# > renomeia; o consumidor nunca lê arquivo pela metade. Para N recursos dinâmicos, `ExitStack`.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - `__exit__` que devolve `True` **engole** a exceção — quase sempre é bug.
 # - `os.replace` é atômico só **no mesmo sistema de arquivos**. Em object storage (ADLS, S3) não existe
@@ -438,12 +438,12 @@ print("hints de carregar():", {k: str(v) for k, v in get_type_hints(carregar).it
 print("carregar() com modo inválido rodou mesmo assim:", carregar([], destino_lista, modo="truncate"))  # type: ignore[arg-type]
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Uso tipos como contrato verificado no CI. Generics PEP 695 para funções que
+# > **Em resumo:** Uso tipos como contrato verificado no CI. Generics PEP 695 para funções que
 # > preservam o tipo do item; `Protocol` para depender de comportamento e não de herança — facilita teste
 # > com um fake; `TypedDict` para descrever JSON sem custo; `Literal` para opções fechadas; `ParamSpec` em
-# > decorators. Mas tipo não valida dado em runtime: na fronteira com o mundo externo, uso pydantic."
+# > decorators. Mas tipo não valida dado em runtime: na fronteira com o mundo externo, uso pydantic.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Variância:** `list[int]` não é `list[float]` (lista é mutável → invariante); `Sequence[int]` é
 #   `Sequence[float]` (covariante). Por isso parâmetros devem pedir o tipo mais abstrato (`Iterable`,
@@ -575,13 +575,13 @@ print(f"pydantic: {t_pyd * 1e6 / len(lote):.1f} µs/evento | dataclass (sem vali
       f"{t_dc * 1e6 / len(lote):.2f} µs/evento")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Dataclass para estrutura interna — `frozen` para imutável e hashable,
+# > **Em resumo:** Dataclass para estrutura interna — `frozen` para imutável e hashable,
 # > `slots` para economizar memória. Pydantic na fronteira: valida e converte dado externo e devolve
 # > **todos** os erros com o caminho do campo. Medi aqui: pydantic custa microssegundos por evento — ok para
 # > configuração, API e lotes pequenos; para milhões de linhas, a validação vai para o Spark (schema +
-# > expectations), não para um loop Python."
+# > expectations), não para um loop Python.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Pydantic v2** tem o núcleo em Rust (`pydantic-core`); o v1 era Python puro e bem mais lento.
 # - **Modo estrito** (`strict=True`) desliga coerção: `"123"` deixa de virar `123`. Em contrato de dados,
@@ -658,12 +658,12 @@ doc = {"quando": ev.created_at, "tipos": {"WatchEvent", "ForkEvent"}, "repo": r}
 print(json.dumps(doc, default=para_json))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "`lru_cache` para memorizar função pura com argumentos hashable — mostro o
+# > **Em resumo:** `lru_cache` para memorizar função pura com argumentos hashable — mostro o
 # > `cache_info()` para provar a taxa de acerto; `partial` para fixar argumentos e passar a função para um
 # > executor; `singledispatch` para polimorfismo por tipo sem cadeia de `isinstance`, como serializar
-# > tipos que o `json` não conhece."
+# > tipos que o `json` não conhece.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - `lru_cache` em **método** segura `self` vivo para sempre (vazamento de memória); use `cached_property`
 #   ou cache no nível do módulo.
@@ -780,13 +780,13 @@ print(f"{N_REQ} 'downloads' de {LATENCIA}s: sequencial {t_seq:.2f}s | threads {t
       f"asyncio (máx. 10 simultâneos) {t_asy:.2f}s")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Escolho pelo gargalo. Esperar rede ou disco: threads, ou asyncio quando são
+# > **Em resumo:** Escolho pelo gargalo. Esperar rede ou disco: threads, ou asyncio quando são
 # > milhares de conexões. CPU em Python puro: processos, porque o GIL serializa threads. Medi aqui com 4
 # > horas do GH Archive: o parse de JSON com threads não acelerou — piorou — e com processos acelerou; só descomprimir,
 # > que é C e solta o GIL, ganhou com threads. E em volume de verdade, quem paraleliza é o Spark — não
-# > escrevo pool de processos para processar terabyte."
+# > escrevo pool de processos para processar terabyte.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Custo do processo:** cada worker é um interpretador; argumentos e resultados viajam serializados
 #   (*pickle*). Devolver o resultado agregado (um dict de contagens) e não as linhas é o que torna o ganho
@@ -829,13 +829,13 @@ print("build free-threaded (Py_GIL_DISABLED):", bool(sysconfig.get_config_var("P
 print("GIL ligado agora:", sys._is_gil_enabled() if hasattr(sys, "_is_gil_enabled") else "sim (API só existe no 3.13+)")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "O GIL faz threads não paralelizarem CPU em Python puro; I/O e extensões em C
+# > **Em resumo:** O GIL faz threads não paralelizarem CPU em Python puro; I/O e extensões em C
 # > que soltam o GIL — zlib, NumPy, Arrow — paralelizam. O build free-threaded existe desde o 3.13 e é
 # > suportado no 3.14, mas é opcional, tem custo em código single-thread e depende de cada extensão em C
 # > declarar suporte. Eu não basearia um pipeline de produção nele hoje; meço antes. E no Spark o GIL
-# > quase não importa: o trabalho pesado roda na JVM e o paralelismo é entre processos/executores."
+# > quase não importa: o trabalho pesado roda na JVM e o paralelismo é entre processos/executores.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Sem GIL, código que "funcionava por acaso" (estado compartilhado sem lock) passa a ter *race condition*.
 # - Extensões em C antigas reativam o GIL ao serem importadas no build free-threaded (com aviso).
@@ -908,12 +908,12 @@ for linha in buf.getvalue().splitlines():
     print(d)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Separo erro de dado de erro de sistema. Linha ruim vai para quarentena com o
+# > **Em resumo:** Separo erro de dado de erro de sistema. Linha ruim vai para quarentena com o
 # > motivo e o job segue — com um limite: se passar de X%, falha. Erro de sistema falha alto, com retry só
 # > no que é transitório. Sempre `raise ... from` para não perder a causa, nunca `except: pass`. Log em JSON
-# > com `run_id`, para correlacionar no Log Analytics e montar alerta por campo."
+# > com `run_id`, para correlacionar no Log Analytics e montar alerta por campo.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Limite de erros:** quarentena sem limite esconde uma fonte que quebrou inteira. Regra comum: falhar
 #   se a taxa de rejeição passar de um limiar (notebook 08).
@@ -935,7 +935,7 @@ for linha in buf.getvalue().splitlines():
 # resolve e instala dependências e grava o `uv.lock` (versões exatas, reproduzíveis). A **wheel** (`.whl`)
 # é o pacote pronto para instalar — é o que vai para o cluster Databricks.
 #
-# **Por que importa** — notebook com lógica copiada não é testável nem versionável. O padrão sênior é:
+# **Por que importa** — notebook com lógica copiada não é testável nem versionável. O padrão de produção é:
 # lógica no pacote → teste → wheel → instalada no job (via Asset Bundle, notebook 13).
 #
 # **Como funciona** — gerando a wheel deste repositório, offline, e olhando dentro dela:
@@ -964,12 +964,12 @@ print("dependências declaradas:", [ln.split(": ")[1] for ln in meta.splitlines(
 print(subprocess.run(["grep", "-A3", "^\\[build-system\\]", "pyproject.toml"], cwd=ROOT, capture_output=True, text=True).stdout)
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Projeto Python com `pyproject.toml` e layout `src/`; uv para dependências com
+# > **Em resumo:** Projeto Python com `pyproject.toml` e layout `src/`; uv para dependências com
 # > lockfile — o CI instala exatamente o que testei. A lógica vira wheel, versionada, e o job no Databricks
 # > instala a wheel; o notebook só orquestra. Dependências de dev (pytest, ruff) ficam num grupo separado e
-# > não vão para a wheel."
+# > não vão para a wheel.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Layout `src/`** impede importar o pacote "sem querer" do diretório corrente: o teste roda contra o
 #   pacote instalado, como em produção.
@@ -1020,12 +1020,12 @@ res = subprocess.run([sys.executable, "-m", "pytest", "-q", "--collect-only", "-
 print("\n".join(ln for ln in res.stdout.splitlines() if "parametriz" in ln or "many" in ln)[:400])
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Testo a lógica no pacote com pytest: fixture para o dado de entrada,
+# > **Em resumo:** Testo a lógica no pacote com pytest: fixture para o dado de entrada,
 # > `tmp_path` para arquivo, `parametrize` para os casos de borda, `monkeypatch` para simular falha de I/O
 # > sem infraestrutura. Para Spark, uma `SparkSession` com escopo de sessão (sobe a JVM uma vez) e DataFrames
-# > pequenos criados no teste. O teste roda no pre-commit/CI antes do deploy."
+# > pequenos criados no teste. O teste roda no pre-commit/CI antes do deploy.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Escopo de fixture:** `function` (padrão), `module`, `session`. A sessão Spark em `tests/conftest.py`
 #   é `scope="session"` — subir a JVM custa segundos.
@@ -1048,7 +1048,7 @@ print("\n".join(ln for ln in res.stdout.splitlines() if "parametriz" in ln or "m
 # vários nós, overhead fixo de JVM e de agendamento).
 #
 # **Por que importa** — usar Spark para 50 MB paga segundos de overhead; usar pandas para 500 GB não
-# termina. A pergunta de entrevista é "qual você usaria e por quê".
+# termina. A pergunta que importa é "qual usar e por quê".
 #
 # **Como funciona** — critérios:
 #
@@ -1094,12 +1094,12 @@ print(f"1 arquivo ({sum(py_counts.values()):,} eventos): Python puro {t_py:.1f}s
 # tabela Delta governada. O `.gz` também não é divisível (*splittable*): 1 arquivo = 1 tarefa, então o
 # Spark local não paraleliza a leitura de um único arquivo.
 #
-# > 🎤 **Resposta de 30 s:** "Escolho por volume, latência e onde o dado mora. Dado que cabe numa máquina:
+# > **Em resumo:** Escolho por volume, latência e onde o dado mora. Dado que cabe numa máquina:
 # > Polars (ou pandas, se o time e o ecossistema pedem). Dado que não cabe, ou que já está no lakehouse com
 # > governança: Spark. No Databricks, o padrão é Spark para o pipeline e pandas/Polars só no driver para
-# > coisa pequena — `toPandas()` em tabela grande derruba o driver."
+# > coisa pequena — `toPandas()` em tabela grande derruba o driver.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **pandas API on Spark** (`import pyspark.pandas as ps`): sintaxe pandas, execução distribuída — útil para
 #   portar código, com diferenças sutis (ordem não garantida, índice custa caro).
@@ -1167,12 +1167,12 @@ bronze.select(lower_udf("login").alias("l")).explain()
 # def lower_arrow(x): ...
 # ```
 #
-# > 🎤 **Resposta de 30 s:** "Primeiro procuro função nativa do Spark — o otimizador enxerga e roda na JVM
+# > **Em resumo:** Primeiro procuro função nativa do Spark — o otimizador enxerga e roda na JVM
 # > (ou no Photon). Medi aqui: a UDF Python foi algumas vezes mais lenta que a nativa, e o plano mostra o
 # > `BatchEvalPython`. Se preciso de Python (uma biblioteca, um modelo), uso pandas UDF: Arrow troca lotes
-# > colunares e a função trabalha vetorizada."
+# > colunares e a função trabalha vetorizada.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Photon** (motor vetorizado em C++ do Databricks) não executa UDF Python: o trecho volta para o
 #   caminho lento.
@@ -1212,7 +1212,7 @@ bronze.select(lower_udf("login").alias("l")).explain()
 # - **Free-threaded** não está nos runtimes do Databricks: a regra "CPU → processos/Spark" continua.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Qual a diferença entre iterator e generator? Quando um generator economiza memória?**
 # <details><summary>Resposta</summary>
@@ -1227,7 +1227,7 @@ bronze.select(lower_udf("login").alias("l")).explain()
 # grupos. Para contar, `Counter`; para agrupar em streaming, a entrada precisa vir ordenada.
 # </details>
 #
-# **3. Escreva um decorator de retry. O que um sênior acrescenta?**
+# **3. Escreva um decorator de retry. O que uma versão de produção acrescenta?**
 # <details><summary>Resposta</summary>
 # Backoff exponencial com jitter, lista explícita de exceções re-tentáveis, teto de espera e de tentativas,
 # `functools.wraps`, `ParamSpec`, `sleep` injetável para teste — e a pergunta "a operação é idempotente?".

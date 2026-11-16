@@ -1,4 +1,4 @@
-"""Testes das soluções de live coding (notebook 16): Python puro e PySpark."""
+"""Testes das soluções dos exercícios do notebook 16: Python puro e PySpark."""
 
 from __future__ import annotations
 

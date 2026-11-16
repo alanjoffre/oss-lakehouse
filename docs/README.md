@@ -11,6 +11,6 @@
 Fora desta pasta:
 
 - [`../README.md`](../README.md) — visão geral, arquitetura e como rodar.
-- [`../GUIA_DE_ESTUDO.md`](../GUIA_DE_ESTUDO.md) — as perguntas de todos os notebooks, com resposta.
+- [`../GUIA_TECNICO.md`](../GUIA_TECNICO.md) — as perguntas técnicas de todos os notebooks, com resposta.
 - [`../evals/revisao_humana/README.md`](../evals/revisao_humana/README.md) — como validar os gabaritos das etapas com LLM.
 - [`../infra/terraform/azure`](../infra/terraform/azure) — a infraestrutura da Azure como código.

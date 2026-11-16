@@ -13,7 +13,7 @@
 # > **watermark** que descarta dado atrasado, **MERGE idempotente** por micro-lote e garantia **exactly-once**
 # > — tudo provado com as métricas do próprio Spark.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Databricks e processamento de dados | Structured Streaming, janelas, watermark, state store (RocksDB), triggers |
 # | Arquitetura e desenvolvimento de pipelines | landing em micro-lotes, checkpoint, exactly-once, `foreachBatch` + MERGE |
@@ -123,12 +123,12 @@ else:
     print("captura ao vivo desligada (OSSLH_WIKI_LIVE=1 liga); usando a fixture gravada")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "O consumidor grava micro-lotes atômicos na landing e só depois persiste o último id.
+# > **Em resumo:** O consumidor grava micro-lotes atômicos na landing e só depois persiste o último id.
 # > Se cair, reconecta com `Last-Event-ID` e no pior caso relê um lote — at-least-once na ingestão. A duplicata
 # > morre na Silver, por chave do evento. Isso separa *receber* de *processar*: o Spark lê arquivos, que são
-# > replayable."
+# > replayable.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Por que não ler o SSE direto no Spark?** Não há fonte SSE nativa, e um socket não é *replayable*: se o job
 #   falhar, o dado do meio se perde. Landing em arquivo (ou Kafka/Event Hubs) dá fonte reexecutável — pré-requisito
@@ -163,11 +163,11 @@ print("é stream?", stream.isStreaming)
 stream.printSchema()
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Structured Streaming é batch incremental: a consulta é um DataFrame comum, o Spark
+# > **Em resumo:** Structured Streaming é batch incremental: a consulta é um DataFrame comum, o Spark
 # > roda em micro-lotes e o checkpoint guarda offsets e estado. Em stream de arquivo o schema é sempre explícito
-# > — inferência em produção é como deixar o produtor mudar seu contrato sem avisar."
+# > — inferência em produção é como deixar o produtor mudar seu contrato sem avisar.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - O file source lista o diretório a cada micro-lote e guarda no checkpoint (`sources/0/`) quais arquivos já leu.
 #   Com milhões de arquivos a listagem fica cara — é exatamente o problema que o **Auto Loader** ☁️ resolve
@@ -222,10 +222,10 @@ print(f"arquivo fechado − evento mais novo dele: de {min(stamps):.0f} s a {max
 # relógios discordem: o desta máquina está cerca de 10 s atrás do servidor. Relógios divergem sempre; é mais um
 # motivo para medir tempo pelo evento e dar folga (watermark) em vez de confiar no relógio do cluster.
 #
-# > 🎤 **Resposta de 30 s:** "Agrego por tempo de evento, nunca de processamento: o resultado tem de ser o mesmo
-# > se eu reprocessar amanhã. Processing time só serve para métricas operacionais — latência, throughput."
+# > **Em resumo:** Agrego por tempo de evento, nunca de processamento: o resultado tem de ser o mesmo
+# > se eu reprocessar amanhã. Processing time só serve para métricas operacionais — latência, throughput.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Há um terceiro tempo: **ingestion time** (quando chegou à landing/Kafka). Kafka carimba `timestamp` na
 #   mensagem — útil quando o evento não traz o seu.
@@ -282,11 +282,11 @@ for t in txns[:3]:
 print("   …", len(txns), "no total; arquivos do checkpoint:", sorted(p.name for p in Path(CK_BRONZE).iterdir()))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Exactly-once em Structured Streaming é fonte replayable mais checkpoint mais sink
+# > **Em resumo:** Exactly-once em Structured Streaming é fonte replayable mais checkpoint mais sink
 # > idempotente. O checkpoint registra o intervalo de cada micro-lote antes de processar e o commit depois; se cair
-# > no meio, o Spark refaz o mesmo lote, e o Delta descarta a regravação porque guarda `(queryId, batchId)` no log."
+# > no meio, o Spark refaz o mesmo lote, e o Delta descarta a regravação porque guarda `(queryId, batchId)` no log.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Pastas do checkpoint: `offsets/` (o que o lote N vai ler — escrito **antes**), `commits/` (lote N terminou —
 #   escrito **depois**), `sources/` (arquivos já vistos), `state/` (estado de agregação/dedupe), `metadata` (id da
@@ -357,11 +357,11 @@ print(f"eventos: {events_static.count()} | soma tumbling: {tumbling.agg(F.sum('c
  .orderBy(F.desc("edicoes")).withColumn("pct_bot", F.round(F.col("pct_bot") * 100, 1)).show(5))
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Tumbling para métricas por período, sliding para média móvel — cada evento cai em
+# > **Em resumo:** Tumbling para métricas por período, sliding para média móvel — cada evento cai em
 # > tamanho/passo janelas. O output mode casa com o sink: append para tabela imutável, depois que o watermark fecha a
-# > janela; update para MERGE; complete só para resultado pequeno, tipo dashboard."
+# > janela; update para MERGE; complete só para resultado pequeno, tipo dashboard.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Session window** (`F.session_window`): janela que fecha após X minutos de inatividade por chave — sessões de
 #   usuário.
@@ -444,12 +444,12 @@ print(f"enwiki/humanos {min_new} (30 s atrás):  {before[min_new]} → {after[mi
 # sai dobrada (aconteceu aqui: marcava 2 até o `merge_batch` passar a fazer `persist`). Use-a como alarme (> 0 =
 # está descartando) e meça o efeito no dado.
 #
-# > 🎤 **Resposta de 30 s:** "Watermark é o contrato de atraso: 'espero até X por evento atrasado; depois disso,
+# > **Em resumo:** Watermark é o contrato de atraso: 'espero até X por evento atrasado; depois disso,
 # > fecho a janela e libero memória'. Eu escolho X medindo a distribuição real de atraso da fonte — p99, por exemplo
 # > — e monitoro `numRowsDroppedByWatermark`. Dado que chega depois vai para um caminho de correção em batch, não
-# > some em silêncio."
+# > some em silêncio.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - O watermark é **global** da consulta: com várias fontes/partições, vale o **mínimo** entre elas por padrão
 #   (`spark.sql.streaming.multipleWatermarkPolicy=min`); partição parada segura todo mundo.
@@ -487,11 +487,11 @@ again = sorted(map(tuple, spark.read.format("delta").load(AGG).collect()))
 print(f"linhas antes: {len(snapshot)} | depois de reaplicar: {len(again)} | idênticas: {snapshot == again}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "`foreachBatch` me dá o micro-lote como DataFrame batch para fazer MERGE. Como ele é
+# > **Em resumo:** `foreachBatch` me dá o micro-lote como DataFrame batch para fazer MERGE. Como ele é
 # > at-least-once, a escrita tem de ser idempotente: MERGE com valor absoluto por chave, ou, para append, as opções
-# > `txnAppId`/`txnVersion` do Delta com o `batchId` — o Delta ignora a versão repetida."
+# > `txnAppId`/`txnVersion` do Delta com o `batchId` — o Delta ignora a versão repetida.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - Append idempotente dentro de `foreachBatch`:
 #   `df.write.format("delta").option("txnAppId", "minha_query").option("txnVersion", batch_id).mode("append")`.
@@ -541,11 +541,11 @@ print("algumas métricas do RocksDB:", dict(list(sorted(rocks.items()))[:4]))
 spark.conf.unset("spark.sql.streaming.stateStore.providerClass")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Se o negócio aceita latência de minutos, uso `availableNow` agendado: mesmas
+# > **Em resumo:** Se o negócio aceita latência de minutos, uso `availableNow` agendado: mesmas
 # > garantias de streaming, cluster ligado só o tempo de processar. `processingTime` contínuo só quando a latência
-# > paga o cluster 24 h. Para estado grande, RocksDB como state store: o estado sai do heap da JVM."
+# > paga o cluster 24 h. Para estado grande, RocksDB como state store: o estado sai do heap da JVM.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - `trigger(once=True)` está **depreciado**: processava tudo num lote só (sem respeitar limites de taxa);
 #   `availableNow` substitui.
@@ -580,11 +580,11 @@ print("\nfases do último lote (ms):", progress[-1]["durationMs"])
 print("fonte:", {k: progress[-1]["sources"][0][k] for k in ("description", "numInputRows")})
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Monitoro input × processed rows por segundo, duração do trigger contra o intervalo,
+# > **Em resumo:** Monitoro input × processed rows por segundo, duração do trigger contra o intervalo,
 # > watermark andando, linhas de estado e descartes. Em produção, um `StreamingQueryListener` manda isso para o
-# > sistema de métricas e alerta quando o lag cresce."
+# > sistema de métricas e alerta quando o lag cresce.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - `triggerExecution` maior que o intervalo do trigger = lotes encavalando: aumente o cluster ou o
 #   `maxFilesPerTrigger`/`maxOffsetsPerTrigger`, ou reveja o estado.
@@ -681,7 +681,7 @@ print(f"silver.wiki_changes: {n1} linhas | silver.wiki_edits_per_minute: {n2} li
 #   contínuo; streaming contínuo só se a latência for requisito de negócio.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. Como Structured Streaming garante exactly-once?**
 # <details><summary>Resposta</summary>

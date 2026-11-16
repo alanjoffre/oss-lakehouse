@@ -13,12 +13,12 @@
 # > a versão certa do repositório (join point-in-time), os agregados batem com o detalhe e a organização
 # > física (Liquid Clustering) roda no Delta open source.
 #
-# | Competência | Onde aparece aqui |
+# | Tema | Onde aparece aqui |
 # |---|---|
 # | Arquitetura e desenvolvimento de pipelines | star schema, grão, surrogate keys, fato × agregado |
 # | Databricks e processamento de dados | Liquid Clustering (`CLUSTER BY`), OPTIMIZE, Databricks SQL ☁️ |
 # | Python avançado | `oss_lakehouse.gold` com testes (`tests/test_gold.py`) |
-# | Times multidisciplinares | perguntas de negócio respondidas em SQL que o analista lê |
+# | Modelagem para o negócio | perguntas de negócio respondidas em SQL que o analista lê |
 #
 # Legenda: 🧪 roda local · ☁️ só no Databricks/Azure (código mostrado, não executado aqui)
 
@@ -119,13 +119,13 @@ print(f"soma de distinct_actors por repo: {soma:,}  ×  atores distintos de verd
 print("eventos: soma do agregado =", f"{agg.agg(F.sum('events')).first()[0]:,}", "| silver =", f"{silver.count():,}")
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Primeiro declaro o grão — 'uma linha = um evento' ou 'uma linha = repo × dia'.
+# > **Em resumo:** Primeiro declaro o grão — 'uma linha = um evento' ou 'uma linha = repo × dia'.
 # > Depois escolho as dimensões e as medidas, separando aditivas (contagens, que somam em qualquer eixo) de
 # > não aditivas (distintos, taxas, que precisam ser recalculadas do detalhe). O erro mais comum é join com
 # > dimensão SCD2 só pela chave natural: multiplica o fato. O certo é join pela surrogate key resolvida no
-# > instante do evento."
+# > instante do evento.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Aditiva / semiaditiva / não aditiva**: contagem soma em tudo; saldo/estoque soma entre contas mas não no
 #   tempo (semiaditiva); distintos e percentuais não somam (guarde numerador e denominador, ou use *sketches*
@@ -173,12 +173,12 @@ dim_repo.filter((F.col("repo_id") == REPO) | (F.col("repo_sk") == UNKNOWN_SK)).o
 # | `dim_actor` | SCD1 | `actor_sk` = xxhash64(actor_id) | login também muda, mas ninguém pediu histórico — vale o atual |
 # | `dim_repo` | SCD2 | `repo_sk` da SCD2 (hash de repo_id + valid_from) | nome/dono no tempo é pergunta de negócio |
 #
-# > 🎤 **Resposta de 30 s:** "Surrogate key existe porque a chave natural não identifica uma versão: com
+# > **Em resumo:** Surrogate key existe porque a chave natural não identifica uma versão: com
 # > SCD2, o mesmo `repo_id` tem várias linhas. Eu gero a sk de forma determinística — hash da chave natural com
 # > o início da vigência — para que reconstruir a dimensão não mude as chaves já gravadas nos fatos. E tenho
-# > membro desconhecido, para nenhum fato sumir num inner join."
+# > membro desconhecido, para nenhum fato sumir num inner join.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Chave natural "inteligente"** (código com significado) muda quando o negócio muda — mais um motivo para sk.
 # - **Durable key**: `repo_id` é estável entre versões — o agregado diário usa ele (grão repo × dia, não
@@ -232,11 +232,11 @@ fct_pr_acumulativo.agg(
 # exatamente o caso de uso do acumulativo: a linha nasce com `mergeado_em` nulo e é **atualizada** (MERGE)
 # quando o marco chega.
 #
-# > 🎤 **Resposta de 30 s:** "Transacional guarda cada evento e só cresce. Snapshot periódico tira uma foto
+# > **Em resumo:** Transacional guarda cada evento e só cresce. Snapshot periódico tira uma foto
 # > por período — bom para tendência e para medidas semiaditivas. Acumulativo é uma linha por processo, com
-# > uma coluna de data por marco, atualizada via MERGE — ideal para medir tempo entre etapas, como lead time de PR."
+# > uma coluna de data por marco, atualizada via MERGE — ideal para medir tempo entre etapas, como lead time de PR.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - O agregado diário aqui é tecnicamente um **agregado** do transacional (só há linha para repo com atividade);
 #   um snapshot periódico "puro" teria linha para todo repo existente, mesmo sem atividade (ex.: estrelas acumuladas).
@@ -303,12 +303,12 @@ print("arquivos:", len(fct.inputFiles()), "| lidos para repo_id = 1385188237:",
 # consultas filtrarem SEMPRE pela coluna. Aqui 3 horas de eventos ocupam ~7 MB no fato — particionar por
 # data criaria arquivos pequenos sem ganho. Liquid Clustering por `date_key, repo_id` dá a poda sem a rigidez.
 #
-# > 🎤 **Resposta de 30 s:** "Na Gold eu não particiono tabela pequena ou média: partição boa tem gigabytes.
+# > **Em resumo:** Na Gold eu não particiono tabela pequena ou média: partição boa tem gigabytes.
 # > Uso Liquid Clustering nas colunas de filtro e join — aqui `date_key` e `repo_id` — e OPTIMIZE periódico.
 # > Testei no Delta OSS: `CLUSTER BY` em SQL funciona, mas o `clusterBy` do DataFrameWriter com save por
-# > caminho é ignorado sem erro, então crio a tabela por SQL."
+# > caminho é ignorado sem erro, então crio a tabela por SQL.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Liquid × partição + Z-order**: Z-order não é incremental (reescreve a partição toda) e as colunas de
 #   partição não mudam sem reescrever a tabela. Liquid é incremental e as chaves mudam com `ALTER TABLE … CLUSTER BY`.
@@ -401,11 +401,11 @@ FROM dim_date d WHERE d.date_key = 20261001
 """).show()
 
 # %% [markdown]
-# > 🎤 **Resposta de 30 s:** "Com o star schema, cada pergunta é um join pela surrogate key e um GROUP BY. Taxa
+# > **Em resumo:** Com o star schema, cada pergunta é um join pela surrogate key e um GROUP BY. Taxa
 # > eu calculo como razão de somas, nunca média de taxas. E valido o modelo cruzando os fatos pela dimensão
-# > conformada: o agregado diário tem que bater com o detalhe."
+# > conformada: o agregado diário tem que bater com o detalhe.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - **Média de taxas × razão de somas**: média das taxas de merge por repo dá o mesmo peso a um repo com 1 PR e
 #   a um com 500 — quase sempre errado.
@@ -442,11 +442,11 @@ print(f"OBT: {len(obt.columns)} colunas, {obt_mb:.1f} MB  ×  star (5 tabelas): 
 # generalize: com dimensões largas (dezenas de atributos de texto) repetidas em bilhões de linhas, a OBT
 # cresce — e o custo que importa nem é o disco, é **reescrever** a OBT quando um atributo muda.
 #
-# > 🎤 **Resposta de 30 s:** "Star é o modelo de integração: dimensões conformadas, SCD2, uma fonte de verdade
+# > **Em resumo:** Star é o modelo de integração: dimensões conformadas, SCD2, uma fonte de verdade
 # > por entidade. OBT é o modelo de servir: zero joins, ótimo para dashboard e para colunar, ao custo de
-# > redundância e de reprocessar a tabela quando uma dimensão muda. Faço OBT derivada do star, não no lugar dele."
+# > redundância e de reprocessar a tabela quando uma dimensão muda. Faço OBT derivada do star, não no lugar dele.
 #
-# <details><summary>🔎 Se o entrevistador cavar mais</summary>
+# <details><summary>🔎 Para aprofundar</summary>
 #
 # - OBT com SCD1 "congela" o atributo da época da carga; mudar o nome de um repo exige reescrever a OBT.
 # - **Snowflake schema** (dimensões normalizadas em subdimensões) economiza espaço e complica consultas —
@@ -477,9 +477,9 @@ print(f"OBT: {len(obt.columns)} colunas, {obt_mb:.1f} MB  ×  star (5 tabelas): 
 # Vault exige uma camada dimensional por cima (mais joins, mais tabelas). Num lakehouse, é comum: Bronze →
 # (Vault como Silver de integração) → Gold dimensional.
 #
-# > 🎤 **Resposta de 30 s:** "Data Vault separa chave (hub), relação (link) e atributo com histórico
+# > **Em resumo:** Data Vault separa chave (hub), relação (link) e atributo com histórico
 # > (satellite), tudo insert-only com hash keys. Brilha na integração de muitas fontes com auditoria; não é
-# > modelo de consumo — por cima dele eu ainda sirvo um star schema."
+# > modelo de consumo — por cima dele eu ainda sirvo um star schema.
 
 # %% [markdown]
 # ## No Databricks / Azure ☁️
@@ -508,7 +508,7 @@ print(f"OBT: {len(obt.columns)} colunas, {obt_mb:.1f} MB  ×  star (5 tabelas): 
 #   semântico do Power BI espera.
 
 # %% [markdown]
-# ## Perguntas de entrevista
+# ## Perguntas técnicas
 #
 # **1. O que é o grão de uma tabela fato e por que é a primeira decisão?**
 # <details><summary>Resposta</summary>
