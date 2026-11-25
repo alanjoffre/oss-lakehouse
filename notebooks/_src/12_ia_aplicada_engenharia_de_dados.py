@@ -91,7 +91,7 @@ print(Counter(r["prompt_id"] for r in llm._entradas.values()).most_common())
 # | Provedor | Para quê | Credencial |
 # |---|---|---|
 # | `cache` | padrão: notebook, testes e CI (offline) | nenhuma |
-# | `claude_cli` | **gravar** o cache nesta máquina (`claude -p --json-schema …`) | sessão do Claude Code |
+# | `claude_cli` | **gravar** o cache nesta máquina (`claude -p --json-schema …`) | sessão autenticada do CLI |
 # | `anthropic` | produção: SDK oficial, `messages.create(..., output_config={"format": {"type": "json_schema", …}})` | `ANTHROPIC_API_KEY` (testado com *mock*, objeto falso no lugar da API) |
 #
 # A **chave do cache** é o SHA-256 de (modelo, id e versão do prompt, *system*, *user*, schema). Mesma entrada →
@@ -527,7 +527,7 @@ for modelo in PRECOS:
 
 # %% [markdown]
 # **Leitura honesta do resultado**
-# - Há **dois números, e nenhum é "o" custo**. O *teto* é o consumo medido na gravação pelo CLI do Claude Code:
+# - Há **dois números, e nenhum é "o" custo**. O *teto* é o consumo medido na gravação pelo CLI do modelo:
 #   112 tokens de entrada e 125 de saída por título. Só que o JSON das 5 respostas soma 3.532 caracteres e foram
 #   cobrados 14.990 tokens de saída — a resposta em si não chega a um décimo disso. O resto é raciocínio do
 #   modelo (*thinking*) e moldura da ferramenta, que também infla a entrada. O *piso* (~43 de entrada e ~8 de

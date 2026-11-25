@@ -9,7 +9,7 @@ Arquitetura (o pipeline só conhece a interface `LLMClient`):
 - **cache** (padrão): replay das respostas gravadas. Offline, determinístico, custo zero.
   É o que o notebook e os testes usam; miss vira erro (`CacheMiss`), nunca chamada escondida.
 - **claude_cli**: subprocesso `claude -p ... --output-format json --json-schema ...`. Usado só
-  para GRAVAR o cache nesta máquina (usa a sessão do Claude Code; sem chave de API no código).
+  para GRAVAR o cache nesta máquina (usa a sessão autenticada do CLI; sem chave de API no código).
 - **anthropic**: SDK oficial (`messages.create` com `output_config.format` = JSON Schema).
   Caminho de produção quando existe `ANTHROPIC_API_KEY` — testado com mock.
 
@@ -201,7 +201,7 @@ class CacheClient:
 
 
 # ---------------------------------------------------------------------------
-# Provedor: CLI do Claude Code (gravação)
+# Provedor: CLI do modelo (gravação)
 # ---------------------------------------------------------------------------
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
@@ -212,7 +212,7 @@ class ClaudeCLIClient:
 
     - `--safe-mode`, `--tools ""`, `--strict-mcp-config`: o modelo só responde texto — nada de
       ler disco, rodar comando ou carregar CLAUDE.md/plugins do usuário.
-    - `--system-prompt` substitui o prompt padrão do Claude Code pelo nosso.
+    - `--system-prompt` substitui o prompt padrão do CLI pelo nosso.
     - `--json-schema`: o CLI valida a resposta e devolve `structured_output`.
     - roda em diretório temporário para não herdar contexto do projeto.
     """
